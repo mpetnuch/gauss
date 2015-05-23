@@ -2,16 +2,13 @@ package org.mpetnuch.gauss.store;
 
 import org.mpetnuch.gauss.matrix.accessor.ArrayElementOrder;
 
-import java.lang.reflect.Array;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.PrimitiveIterator;
 import java.util.stream.DoubleStream;
-import java.util.stream.Stream;
 
 /**
  * @author Michael Petnuch
- * @id $Id$
+ * @version $Id$
  */
 final class ArrayStore2D extends ArrayStore implements Store2D {
     final ArrayStructure2D structure;
@@ -100,10 +97,6 @@ final class ArrayStore2D extends ArrayStore implements Store2D {
         final ArrayElementOrder arrayElementOrder;
         final int stride;
 
-        public abstract double[] flatten(double[][] array2D);
-
-        public abstract int index(int rowIndex, int columnIndex);
-
         private ArrayStructure2D(ArrayElementOrder arrayElementOrder, int offset, int rowCount, int columnCount, int stride) {
             super(offset, new int[]{rowCount, columnCount}, getStrideArray(arrayElementOrder, stride));
             this.arrayElementOrder = arrayElementOrder;
@@ -115,6 +108,10 @@ final class ArrayStore2D extends ArrayStore implements Store2D {
                     new int[]{1, stride} :
                     new int[]{stride, 1};
         }
+
+        public abstract double[] flatten(double[][] array2D);
+
+        public abstract int index(int rowIndex, int columnIndex);
 
         public int getRowCount() {
             return dimensions[0];

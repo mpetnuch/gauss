@@ -4,7 +4,7 @@ import java.util.stream.DoubleStream;
 
 /**
  * @author Michael Petnuch
- * @id $Id$
+ * @version $Id$
  */
 public interface Store extends Iterable<Double> {
     DoubleStream stream();

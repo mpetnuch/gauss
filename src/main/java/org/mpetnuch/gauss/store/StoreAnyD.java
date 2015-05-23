@@ -2,7 +2,7 @@ package org.mpetnuch.gauss.store;
 
 /**
  * @author Michael Petnuch
- * @id $Id$
+ * @version $Id$
  */
 public interface StoreAnyD extends Store {
     double get(int... indices);

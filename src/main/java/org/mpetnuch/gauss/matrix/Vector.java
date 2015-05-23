@@ -7,7 +7,7 @@ import java.util.stream.DoubleStream;
 
 /**
  * @author Michael Petnuch
- * @id $Id$
+ * @version $Id$
  */
 public interface Vector extends Serializable {
     double get(int i);

@@ -2,16 +2,13 @@ package org.mpetnuch.gauss.store;
 
 import org.mpetnuch.gauss.store.ArrayStore2D.ArrayStructure2D;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.PrimitiveIterator;
 import java.util.stream.DoubleStream;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
-
-import static java.util.Spliterator.*;
 
 /**
  * @author Michael Petnuch
- * @id $Id$
+ * @version $Id$
  */
 public abstract class ArrayStore implements StoreAnyD {
     protected final double[] array;
@@ -50,6 +47,11 @@ public abstract class ArrayStore implements StoreAnyD {
     @Override
     public DoubleStream stream() {
         return getStructure().stream(array);
+    }
+
+    @Override
+    public PrimitiveIterator.OfDouble iterator() {
+        return getStructure().iterator(array);
     }
 
     protected static class ArrayStructure implements Structure {
@@ -158,10 +160,5 @@ public abstract class ArrayStore implements StoreAnyD {
                 return array[arrayIndex++];
             }
         }
-    }
-
-    @Override
-    public PrimitiveIterator.OfDouble iterator() {
-        return getStructure().iterator(array);
     }
 }

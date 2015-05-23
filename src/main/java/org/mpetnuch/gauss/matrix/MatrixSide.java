@@ -2,7 +2,7 @@ package org.mpetnuch.gauss.matrix;
 
 /**
  * @author Michael Petnuch
- * @id $Id$
+ * @version $Id$
  */
 public enum MatrixSide {
     LEFT(141),

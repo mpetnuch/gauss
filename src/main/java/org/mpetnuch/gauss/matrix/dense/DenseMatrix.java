@@ -19,22 +19,18 @@
 
 package org.mpetnuch.gauss.matrix.dense;
 
-import java.util.stream.IntStream;
-
 import org.mpetnuch.gauss.linearalgebra.blas3.BLASLevel3;
 import org.mpetnuch.gauss.linearalgebra.blas3.JBLASLevel3;
-import org.mpetnuch.gauss.matrix.Matrix;
-import org.mpetnuch.gauss.matrix.MatrixDiagonalType;
-import org.mpetnuch.gauss.matrix.MatrixSide;
-import org.mpetnuch.gauss.matrix.MatrixType;
-import org.mpetnuch.gauss.matrix.TriangularMatrixType;
+import org.mpetnuch.gauss.matrix.*;
 import org.mpetnuch.gauss.matrix.accessor.ArrayElementAccessor1D;
 import org.mpetnuch.gauss.matrix.accessor.ArrayElementAccessor2D;
 import org.mpetnuch.gauss.matrix.accessor.ArrayElementOrder;
 
+import java.util.stream.IntStream;
+
 /**
  * @author Michael Petnuch
- * @id $Id$
+ * @version $Id$
  */
 public abstract class DenseMatrix implements Matrix {
     private static final long serialVersionUID = -7150013139589271348L;
@@ -45,12 +41,6 @@ public abstract class DenseMatrix implements Matrix {
 
     DenseMatrix(ArrayElementAccessor2D elementAccessor) {
         this.elementAccessor = elementAccessor;
-    }
-
-    abstract DenseMatrix create(ArrayElementAccessor2D elementAccessor);
-
-    public double[] unsafeGetElements() {
-        return elementAccessor.elements;
     }
 
     public static DenseMatrix from(double[][] matrix) {
@@ -99,6 +89,12 @@ public abstract class DenseMatrix implements Matrix {
         }
 
         return new DenseGeneralMatrix(elementAccessor);
+    }
+
+    abstract DenseMatrix create(ArrayElementAccessor2D elementAccessor);
+
+    public double[] unsafeGetElements() {
+        return elementAccessor.elements;
     }
 
     public DenseMatrix multiply(DenseMatrix that) {
@@ -172,6 +168,10 @@ public abstract class DenseMatrix implements Matrix {
         elementAccessor.toArray(copy, elementOrder);
     }
 
+    public void setBlasLevel3(BLASLevel3<DenseMatrix, DenseTriangularMatrix, DenseSymmetricMatrix, DenseMatrixBuilder> blasLevel3) {
+        this.blasLevel3 = blasLevel3;
+    }
+
     private static final class DenseMatrixRow extends DenseVector implements MatrixRow {
         private static final long serialVersionUID = -3104116423696752144L;
         private final int index;
@@ -200,9 +200,5 @@ public abstract class DenseMatrix implements Matrix {
         public int getIndex() {
             return index;
         }
-    }
-
-    public void setBlasLevel3(BLASLevel3<DenseMatrix, DenseTriangularMatrix, DenseSymmetricMatrix, DenseMatrixBuilder> blasLevel3) {
-        this.blasLevel3 = blasLevel3;
     }
 }
