@@ -66,9 +66,7 @@ public final class ArrayElementAccessor1D {
             return;
         }
 
-        for (int i = 0; i < length; i++) {
-            array[i] = get(i);
-        }
+        Arrays.setAll(array, this::get);
     }
 
     public ArrayElementAccessor1D compact() {
