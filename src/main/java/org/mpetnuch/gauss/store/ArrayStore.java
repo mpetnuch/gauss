@@ -53,7 +53,7 @@ public abstract class ArrayStore implements StoreAnyD {
         protected final int offset;
         protected final int[] dimensions, strides;
 
-        public ArrayStructure(int offset, int[] dimensions, int[] strides) {
+        public ArrayStructure(int[] dimensions, int[] strides, int offset) {
             this.offset = offset;
             this.strides = strides;
             this.dimension = dimensions.length;

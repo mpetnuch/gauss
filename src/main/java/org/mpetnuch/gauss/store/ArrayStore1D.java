@@ -17,7 +17,7 @@ public class ArrayStore1D extends ArrayStore implements Store1D {
     }
 
     public ArrayStore1D from(double[] array) {
-        return new ArrayStore1D(array, new ArrayStructure1D(0, array.length, 1));
+        return new ArrayStore1D(array, new ArrayStructure1D(array.length, 1, 0));
     }
 
     @Override
@@ -30,12 +30,40 @@ public class ArrayStore1D extends ArrayStore implements Store1D {
         return structure;
     }
 
+    public static class ArrayStore1DBuilder {
+        private final int length;
+        private int offset = 0;
+        private int stride = 1;
+
+        public ArrayStore1DBuilder(int length) {
+            this.length = length;
+        }
+
+        public ArrayStore1D build(double[] array) {
+            return new ArrayStore1D(array, new ArrayStructure1D(length, stride, offset));
+        }
+
+        public ArrayStore1DBuilder setStride(int stride) {
+            this.stride = stride;
+            return this;
+        }
+
+        public ArrayStore1DBuilder setOffset(int offset) {
+            this.offset = offset;
+            return this;
+        }
+    }
+
     public static class ArrayStructure1D extends ArrayStructure {
         final int stride;
 
-        public ArrayStructure1D(int offset, int length, int stride) {
-            super(offset, new int[]{length}, new int[]{stride});
+        public ArrayStructure1D(int length, int stride, int offset) {
+            super(new int[]{length}, new int[]{stride}, offset);
             this.stride = stride;
+        }
+
+        public ArrayStructure1D(int length) {
+            this(length, 1, 0);
         }
 
         @Override

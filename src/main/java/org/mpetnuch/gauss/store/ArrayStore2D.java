@@ -70,14 +70,14 @@ final class ArrayStore2D extends ArrayStore implements Store2D {
         private ArrayStructure2D getStructure(ArrayElementOrder arrayElementOrder, int stride) {
             if (arrayElementOrder == ArrayElementOrder.ColumnMajor) {
                 if (rowCount <= stride) {
-                    return new ColumnMajorArrayStructure2D(offset, rowCount, columnCount, stride);
+                    return new ColumnMajorArrayStructure2D(rowCount, columnCount, stride, offset);
                 } else {
                     throw new IllegalArgumentException(String.format(
                             "ColumnMajor stride[%d] < rowCount[%d]!", stride, columnCount));
                 }
             } else if (arrayElementOrder == ArrayElementOrder.RowMajor) {
                 if (columnCount <= stride) {
-                    return new RowMajorArrayStructure2D(offset, rowCount, columnCount, stride);
+                    return new RowMajorArrayStructure2D(rowCount, columnCount, stride, offset);
                 } else {
                     throw new IllegalArgumentException(String.format(
                             "RowMajor stride[%d] < columnCount[%d]!", stride, columnCount));
@@ -94,12 +94,12 @@ final class ArrayStore2D extends ArrayStore implements Store2D {
     }
 
     private static final class RowMajorArrayStructure2D extends ArrayStructure2D {
-        private RowMajorArrayStructure2D(int offset, int rowCount, int columnCount, int stride) {
-            super(ArrayElementOrder.RowMajor, offset, rowCount, columnCount, stride);
+        private RowMajorArrayStructure2D(int rowCount, int columnCount, int stride, int offset) {
+            super(ArrayElementOrder.RowMajor, rowCount, columnCount, stride, offset);
         }
 
         private RowMajorArrayStructure2D(int rowCount, int columnCount) {
-            this(0, rowCount, columnCount, columnCount);
+            this(rowCount, columnCount, columnCount, 0);
         }
 
         @Override
@@ -122,8 +122,8 @@ final class ArrayStore2D extends ArrayStore implements Store2D {
     }
 
     private static final class ColumnMajorArrayStructure2D extends ArrayStructure2D {
-        private ColumnMajorArrayStructure2D(int offset, int rowCount, int columnCount, int stride) {
-            super(ArrayElementOrder.ColumnMajor, offset, rowCount, columnCount, stride);
+        private ColumnMajorArrayStructure2D(int rowCount, int columnCount, int stride, int offset) {
+            super(ArrayElementOrder.ColumnMajor, rowCount, columnCount, stride, offset);
         }
 
         @Override
@@ -151,8 +151,8 @@ final class ArrayStore2D extends ArrayStore implements Store2D {
         final ArrayElementOrder arrayElementOrder;
         final int stride;
 
-        private ArrayStructure2D(ArrayElementOrder arrayElementOrder, int offset, int rowCount, int columnCount, int stride) {
-            super(offset, new int[]{rowCount, columnCount}, getStrideArray(arrayElementOrder, stride));
+        private ArrayStructure2D(ArrayElementOrder arrayElementOrder, int rowCount, int columnCount, int stride, int offset) {
+            super(new int[]{rowCount, columnCount}, getStrideArray(arrayElementOrder, stride), offset);
             this.arrayElementOrder = arrayElementOrder;
             this.stride = stride;
         }
