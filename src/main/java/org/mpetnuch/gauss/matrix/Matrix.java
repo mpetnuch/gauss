@@ -28,7 +28,7 @@ import java.util.stream.Stream;
  * @author Michael Petnuch
  * @version $Id$
  */
-public interface Matrix<T extends Number> extends Serializable {
+public interface Matrix extends Serializable {
 
     int getNumberOfRows();
 
@@ -38,9 +38,9 @@ public interface Matrix<T extends Number> extends Serializable {
 
     MatrixColumn getColumn(int columnIndex);
 
-    Matrix<T> transpose();
+    Matrix transpose();
 
-    Matrix<T> compact();
+    Matrix compact();
 
     default Stream<MatrixRow> rows() {
         return IntStream.range(0, getNumberOfRows()).mapToObj(this::getRow);
@@ -50,9 +50,9 @@ public interface Matrix<T extends Number> extends Serializable {
         return IntStream.range(0, getNumberOfColumns()).mapToObj(this::getColumn);
     }
 
-    Matrix<T> reshape(int rows, int columns);
+    Matrix reshape(int rows, int columns);
 
-    Matrix<T> slice(int rowStart, int rowEnd, int columnStart, int columnEnd);
+    Matrix slice(int rowStart, int rowEnd, int columnStart, int columnEnd);
 
     MatrixType getMatrixType();
 
@@ -83,11 +83,11 @@ public interface Matrix<T extends Number> extends Serializable {
         }
     }
 
-    public interface MatrixRow extends Vector {
+    interface MatrixRow extends Vector {
         int getIndex();
     }
 
-    public interface MatrixColumn extends Vector {
+    interface MatrixColumn extends Vector {
         int getIndex();
     }
 

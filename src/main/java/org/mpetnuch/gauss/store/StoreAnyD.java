@@ -8,6 +8,4 @@ public interface StoreAnyD extends Store {
     double get(int... indices);
 
     int dimension(int dimension);
-
-    Structure getStructure();
 }

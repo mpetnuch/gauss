@@ -1,10 +1,9 @@
 package org.mpetnuch.gauss.store;
 
-import org.mpetnuch.gauss.store.ArrayStore2D.ArrayStructure2D;
-
-import java.util.Arrays;
-import java.util.PrimitiveIterator;
+import java.util.*;
+import java.util.function.DoubleConsumer;
 import java.util.stream.DoubleStream;
+import java.util.stream.StreamSupport;
 
 /**
  * @author Michael Petnuch
@@ -17,13 +16,7 @@ public abstract class ArrayStore implements StoreAnyD {
         this.array = array;
     }
 
-    public static Store2D from(double [][] array) {
-        int rowCount = array.length;
-        int columnCount = array[0].length;
-
-        ArrayStructure2D structure = new ArrayStore2D.ColumnMajorArrayStructure2D(0, rowCount, columnCount, rowCount);
-        return new ArrayStore2D(structure.flatten(array), structure);
-    }
+    abstract ArrayStructure getStructure();
 
     @Override
     public final int dimension(int dimension) {
@@ -54,7 +47,7 @@ public abstract class ArrayStore implements StoreAnyD {
         return getStructure().iterator(array);
     }
 
-    protected static class ArrayStructure implements Structure {
+    protected abstract static class ArrayStructure implements Structure {
         protected final int dimension;
         protected final int size;
         protected final int offset;
@@ -68,6 +61,8 @@ public abstract class ArrayStore implements StoreAnyD {
             this.size = Arrays.stream(dimensions).reduce(1, (left, right) -> left * right);
         }
 
+        abstract Spliterator.OfDouble spliterator(double[] array);
+
         private int getIndex(int... indices) {
             int index = offset;
             for (int n = 0; n < dimension; n++) {
@@ -75,6 +70,18 @@ public abstract class ArrayStore implements StoreAnyD {
             }
 
             return index;
+        }
+
+        double get(double[] array, int... indices) {
+            return array[getIndex(indices)];
+        }
+
+        PrimitiveIterator.OfDouble iterator(double[] array) {
+            return Spliterators.iterator(spliterator(array));
+        }
+
+        DoubleStream stream(double[] array) {
+            return StreamSupport.doubleStream(spliterator(array), false);
         }
 
         @Override
@@ -92,72 +99,215 @@ public abstract class ArrayStore implements StoreAnyD {
             return size;
         }
 
-        @Override
-        public double get(double[] array, int... indices) {
-            return array[getIndex(indices)];
-        }
-
-        @Override
-        public PrimitiveIterator.OfDouble iterator(double[] array) {
-            return new ArrayStructureIterator(array);
-        }
-
-        @Override
-        public DoubleStream stream(double[] array) {
-            return Arrays.stream(array);
-        }
-
-        public class ArrayStructureIterator implements PrimitiveIterator.OfDouble {
-            private final int[] indices = new int[dimension];
+        public class ArrayStructureSpliterator implements Spliterator.OfDouble {
+            private final int[] indices;
             private final double[] array;
-            private int arrayIndex = offset;
-            private int index = 0;
+            private final int fence;  // one past last element to be processed
+            private final int characteristics = ORDERED | IMMUTABLE | SIZED | SUBSIZED;
+            private int index;        // current index int the array, modified on advance/split
+            private int elementIndex; // current element to be processed, modified on advance/split
 
-            public ArrayStructureIterator(double[] array) {
+            public ArrayStructureSpliterator(double[] array) {
                 this.array = array;
+                this.indices = new int[dimension];
+
+                this.fence = size;
+                this.index = offset;
+                this.elementIndex = 0;
+            }
+
+            public ArrayStructureSpliterator(double[] array, int[] indices, int index, int elementIndex, int fence) {
+                this.array = array;
+                this.indices = indices;
+                this.index = index;
+                this.elementIndex = elementIndex;
+                this.fence = fence;
             }
 
             @Override
-            public boolean hasNext() {
-                return index < size;
+            public OfDouble trySplit() {
+                final int lo = index, loElement = elementIndex, midElement = (loElement + size) >>> 1;
+                if (loElement >= midElement) {
+                    return null;
+                }
+
+                // copy the current indicies as the lo indicies
+                final int[] loIndicies = indices.clone();
+
+                // find the number of elements we need to advance the indices by
+                int splitAdvance = midElement - loElement;
+
+                // find the number of elements advanced by increasing a dimension's index value
+                final int[] subDimensionSize = new int[dimension];
+                for (int i = dimension - 1, p = 1; i >= 0; i--) {
+                    subDimensionSize[i] = p;
+                    p *= dimensionLength(i);
+                }
+
+                // We need to find the index of max sub-dimension for which the requested element is in. Once we
+                // have that we that we can adjust all the other sub dimensions to the exact requested position
+                int maxSubDimension = dimension - 1;
+                while (maxSubDimension >= 0) {
+                    final int n = subDimensionSize[maxSubDimension];
+                    final int l = dimensionLength(maxSubDimension);
+                    for (int j = indices[maxSubDimension]; splitAdvance >= n && j < l; j++) {
+                        indices[maxSubDimension]++;
+                        splitAdvance -= n;
+                    }
+
+                    if (indices[maxSubDimension] == l) {
+                        // We adjusted all we can in this dimension, so we zero out the index and advance the
+                        // next dimension
+                        indices[maxSubDimension] = 0;
+                        indices[maxSubDimension - 1]++;
+                    }
+
+                    maxSubDimension--;
+                }
+
+                // go up in the dimensions and isolate the exact position
+                for (int subDimension = maxSubDimension + 1; subDimension < dimension; subDimension++) {
+                    final int n = subDimensionSize[subDimension];
+                    final int l = dimensionLength(subDimension);
+                    for (int j = indices[subDimension]; splitAdvance >= n && j < l; j++) {
+                        indices[subDimension]++;
+                        splitAdvance -= n;
+                    }
+                }
+
+                // set index based on the newly adjusted indicies
+                index = getIndex(indices);
+
+                return new ArrayStructureSpliterator(array, loIndicies, lo, loElement, elementIndex = midElement);
             }
 
             @Override
-            public double nextDouble() {
-                double next = array[arrayIndex];
-                index++;
+            public void forEachRemaining(DoubleConsumer action) {
+                Objects.requireNonNull(action);
 
+                // hoist accesses and checks from loop
+                final int hi;
+                int i;
+                if (array.length >= (hi = fence) && (i = index) >= 0 && i < (index = hi)) {
+                    do {
+                        action.accept(array[i]);
+                    } while ((i = nextIndex(i)) < hi);
+                }
+            }
+
+            @Override
+            public boolean tryAdvance(DoubleConsumer action) {
+                Objects.requireNonNull(action);
+
+                if (elementIndex > 0 && elementIndex < fence) {
+                    action.accept(array[index]);
+                    index = nextIndex(index);
+                    elementIndex++;
+                    return true;
+                }
+
+                return false;
+            }
+
+            private int nextIndex(int currentIndex) {
                 for (int i = dimension - 1; i >= 0; i--) {
                     if (++indices[i] < dimensions[i]) {
-                        arrayIndex += strides[i];
-                        return next;
+                        currentIndex += strides[i];
+                        return currentIndex;
                     }
 
                     indices[i] = 0;
-                    arrayIndex -= ((dimensions[i] - 1) * strides[i]);
+                    currentIndex -= ((dimensions[i] - 1) * strides[i]);
                 }
 
-                return next;
+                return currentIndex;
+            }
+
+            @Override
+            public long estimateSize() {
+                return (long) (size - elementIndex);
+            }
+
+            @Override
+            public int characteristics() {
+                return characteristics;
             }
         }
 
-        public class ContiguousArrayStructureIterator implements PrimitiveIterator.OfDouble {
-            private final int fence = offset + size;
+        public class StridedArrayStructureSpliterator implements Spliterator.OfDouble {
             private final double[] array;
-            private int arrayIndex = offset;
+            private final int stride;
+            private final int fence;  // one past last index
+            private final int characteristics = IMMUTABLE | ORDERED | SIZED | SUBSIZED;
+            private int index;        // current index, modified on advance/split
 
-            public ContiguousArrayStructureIterator(double[] array) {
+            public StridedArrayStructureSpliterator(double[] array, int stride) {
                 this.array = array;
+                this.stride = stride;
+
+                this.index = offset;
+                this.fence = offset + size * stride;
+            }
+
+            public StridedArrayStructureSpliterator(double[] array, int stride, int index, int fence) {
+                this.array = array;
+                this.stride = stride;
+
+                this.index = index;
+                this.fence = fence;
             }
 
             @Override
-            public boolean hasNext() {
-                return arrayIndex < fence;
+            public OfDouble trySplit() {
+                // mid is the current index adjusted by the half the remaining elements
+                // times the stride width
+                final int lo = index, mid = lo + (((fence - lo) / stride) >>> 1) * stride;
+                if (lo >= mid) {
+                    return null;
+                }
+
+                return new StridedArrayStructureSpliterator(array, stride, lo, index = mid);
             }
 
             @Override
-            public double nextDouble() {
-                return array[arrayIndex++];
+            public void forEachRemaining(DoubleConsumer action) {
+                Objects.requireNonNull(action);
+
+                // hoist accesses and checks from loop
+                final int hi;
+                int i;
+                if (array.length >= (hi = fence) && (i = index) >= 0 && i < (index = hi)) {
+                    do {
+                        action.accept(array[i]);
+                    } while ((i = nextIndex(i)) < hi);
+                }
+            }
+
+            @Override
+            public boolean tryAdvance(DoubleConsumer action) {
+                Objects.requireNonNull(action);
+
+                if (index > 0 && index < fence) {
+                    action.accept(array[index]);
+                    index = nextIndex(index);
+                    return true;
+                }
+
+                return false;
+            }
+
+            private int nextIndex(int currentIndex) {
+                return currentIndex + stride;
+            }
+
+            @Override
+            public long estimateSize() {
+                return (long) (size - (fence - index) * stride);
+            }
+
+            @Override
+            public int characteristics() {
+                return characteristics;
             }
         }
     }
