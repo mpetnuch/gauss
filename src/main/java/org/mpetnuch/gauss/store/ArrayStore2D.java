@@ -21,26 +21,8 @@ final class ArrayStore2D extends ArrayStore implements Store2D {
         final int rowCount = array.length;
         final int columnCount = array[0].length;
 
-        final ArrayStructure2D structure =
-                new ArrayStore2D.ColumnMajorArrayStructure2D(0, rowCount, columnCount, rowCount);
-
+        final ArrayStructure2D structure = new RowMajorArrayStructure2D(rowCount, columnCount);
         return new ArrayStore2D(structure.flatten(array), structure);
-    }
-
-    public static ArrayStore2D from(double[] array, int rowCount, int columnCount, ArrayElementOrder arrayElementOrder) {
-        ArrayStructure2D structure;
-        switch (arrayElementOrder) {
-            case ColumnMajor:
-                structure = new ArrayStore2D.ColumnMajorArrayStructure2D(0, rowCount, columnCount, rowCount);
-                break;
-            case RowMajor:
-                structure = new ArrayStore2D.RowMajorArrayStructure2D(0, rowCount, columnCount, rowCount);
-                break;
-            default:
-                throw new AssertionError();
-        }
-
-        return new ArrayStore2D(array, structure);
     }
 
     @Override
@@ -62,9 +44,62 @@ final class ArrayStore2D extends ArrayStore implements Store2D {
         return structure.get(array, rowIndex, columnIndex);
     }
 
+    public static class ArrayStore2DBuilder {
+        private final int rowCount, columnCount;
+        private int offset = 0;
+
+        public ArrayStore2DBuilder(int rowCount, int columnCount) {
+            this.rowCount = rowCount;
+            this.columnCount = columnCount;
+        }
+
+        public ArrayStore2D build(double[] array, int stride, ArrayElementOrder arrayElementOrder) {
+            return new ArrayStore2D(array, getStructure(arrayElementOrder, stride));
+        }
+
+        public ArrayStore2D build(double[] array, ArrayElementOrder arrayElementOrder) {
+            if (arrayElementOrder == ArrayElementOrder.ColumnMajor) {
+                return new ArrayStore2D(array, getStructure(arrayElementOrder, rowCount));
+            } else if (arrayElementOrder == ArrayElementOrder.RowMajor) {
+                return new ArrayStore2D(array, getStructure(arrayElementOrder, columnCount));
+            } else {
+                throw new AssertionError();
+            }
+        }
+
+        private ArrayStructure2D getStructure(ArrayElementOrder arrayElementOrder, int stride) {
+            if (arrayElementOrder == ArrayElementOrder.ColumnMajor) {
+                if (rowCount <= stride) {
+                    return new ColumnMajorArrayStructure2D(offset, rowCount, columnCount, stride);
+                } else {
+                    throw new IllegalArgumentException(String.format(
+                            "ColumnMajor stride[%d] < rowCount[%d]!", stride, columnCount));
+                }
+            } else if (arrayElementOrder == ArrayElementOrder.RowMajor) {
+                if (columnCount <= stride) {
+                    return new RowMajorArrayStructure2D(offset, rowCount, columnCount, stride);
+                } else {
+                    throw new IllegalArgumentException(String.format(
+                            "RowMajor stride[%d] < columnCount[%d]!", stride, columnCount));
+                }
+            } else {
+                throw new AssertionError("Unknown ArrayElementOrder: " + arrayElementOrder);
+            }
+        }
+
+        public ArrayStore2DBuilder setOffset(int offset) {
+            this.offset = offset;
+            return this;
+        }
+    }
+
     private static final class RowMajorArrayStructure2D extends ArrayStructure2D {
-        public RowMajorArrayStructure2D(int offset, int rowCount, int columnCount, int stride) {
+        private RowMajorArrayStructure2D(int offset, int rowCount, int columnCount, int stride) {
             super(ArrayElementOrder.RowMajor, offset, rowCount, columnCount, stride);
+        }
+
+        private RowMajorArrayStructure2D(int rowCount, int columnCount) {
+            this(0, rowCount, columnCount, columnCount);
         }
 
         @Override
@@ -87,7 +122,7 @@ final class ArrayStore2D extends ArrayStore implements Store2D {
     }
 
     private static final class ColumnMajorArrayStructure2D extends ArrayStructure2D {
-        public ColumnMajorArrayStructure2D(int offset, int rowCount, int columnCount, int stride) {
+        private ColumnMajorArrayStructure2D(int offset, int rowCount, int columnCount, int stride) {
             super(ArrayElementOrder.ColumnMajor, offset, rowCount, columnCount, stride);
         }
 
