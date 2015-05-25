@@ -16,7 +16,22 @@ public abstract class ArrayStore implements StoreAnyD {
         this.array = array;
     }
 
-    abstract ArrayStructure getStructure();
+    public abstract ArrayStructure getStructure();
+
+    public abstract ArrayStore compact();
+
+    public abstract void copyInto(double[] copy, int offset);
+
+    public void copyInto(double[] copy) {
+        copyInto(copy, 0);
+    }
+
+    public double[] toArray() {
+        final double[] copy = new double[size()];
+        copyInto(copy);
+        return copy;
+    }
+
 
     @Override
     public final int dimension(int dimension) {
@@ -45,6 +60,10 @@ public abstract class ArrayStore implements StoreAnyD {
     @Override
     public PrimitiveIterator.OfDouble iterator() {
         return getStructure().iterator(array);
+    }
+
+    public double[] unsafeGetElements() {
+        return array;
     }
 
     protected abstract static class ArrayStructure implements Structure {
@@ -246,7 +265,7 @@ public abstract class ArrayStore implements StoreAnyD {
                 this.stride = stride;
 
                 this.index = offset;
-                this.fence = offset + size * stride;
+                this.fence = 1 + offset + (size - 1) * stride;
             }
 
             public StridedArrayStructureSpliterator(double[] array, int stride, int index, int fence) {

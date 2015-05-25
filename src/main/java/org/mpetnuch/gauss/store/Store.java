@@ -8,6 +8,7 @@ import java.util.stream.DoubleStream;
  * @version $Id$
  */
 public interface Store extends Iterable<Double> {
+    @Override
     PrimitiveIterator.OfDouble iterator();
 
     DoubleStream stream();

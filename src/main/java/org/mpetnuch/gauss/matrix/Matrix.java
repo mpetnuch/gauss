@@ -50,8 +50,6 @@ public interface Matrix extends Serializable {
         return IntStream.range(0, getNumberOfColumns()).mapToObj(this::getColumn);
     }
 
-    Matrix reshape(int rows, int columns);
-
     Matrix slice(int rowStart, int rowEnd, int columnStart, int columnEnd);
 
     MatrixType getMatrixType();
@@ -90,5 +88,4 @@ public interface Matrix extends Serializable {
     interface MatrixColumn extends Vector {
         int getIndex();
     }
-
 }

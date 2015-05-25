@@ -1,8 +1,6 @@
 package org.mpetnuch.gauss.matrix;
 
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.PrimitiveIterator;
 import java.util.stream.DoubleStream;
 
 /**
@@ -22,20 +20,15 @@ public interface Vector extends Serializable {
 
     DoubleStream stream();
 
+    double[] toArray();
+
+    void copyInto(double[] copy);
+
     default Matrix toColumnMatrix() {
         return reshape(length(), 1);
     }
 
     default Matrix toRowMatrix() {
         return reshape(1, length());
-    }
-
-    default double[] toArray() {
-        return stream().toArray();
-    }
-
-    default void toArray(double[] array) {
-        PrimitiveIterator.OfDouble values = stream().iterator();
-        Arrays.setAll(array, value -> values.next());
     }
 }

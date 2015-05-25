@@ -2,14 +2,14 @@ package org.mpetnuch.gauss.linearalgebra.blas3;
 
 import org.mpetnuch.gauss.matrix.MatrixSide;
 import org.mpetnuch.gauss.matrix.TriangularMatrixType;
-import org.mpetnuch.gauss.matrix.accessor.ArrayElementAccessor2D;
-import org.mpetnuch.gauss.matrix.accessor.ArrayElementOrder;
-import org.mpetnuch.gauss.matrix.dense.*;
+import org.mpetnuch.gauss.matrix.dense.DenseMatrix;
+import org.mpetnuch.gauss.matrix.dense.DenseMatrixBuilder;
+import org.mpetnuch.gauss.matrix.dense.DenseSymmetricMatrix;
+import org.mpetnuch.gauss.matrix.dense.DenseTriangularMatrix;
 
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveAction;
-import java.util.stream.IntStream;
 
 /**
  * @author Michael Petnuch
@@ -24,29 +24,35 @@ public class JBLASLevel3 implements BLASLevel3<DenseMatrix, DenseTriangularMatri
         this.pool = pool;
     }
 
-    public static class JBLASLevel3Builder {
-        private int matrixMultiplyLeafDimension = 256;
-        private ForkJoinPool pool = ForkJoinPool.commonPool();
-
-        public JBLASLevel3Builder setPool(ForkJoinPool pool) {
-            this.pool = pool;
-            return this;
-        }
-
-        public JBLASLevel3Builder setMatrixMultiplyLeafDimension(int matrixMultiplyCrossoverDimension) {
-            this.matrixMultiplyLeafDimension = matrixMultiplyCrossoverDimension;
-            return this;
-        }
-
-        public JBLASLevel3 createJBLASLevel3() {
-            return new JBLASLevel3(matrixMultiplyLeafDimension, pool);
-        }
-    }
-
     @Override
     public void dgemm(double alpha, DenseMatrix a, DenseMatrix b, double beta, DenseMatrixBuilder c) {
         ForkJoinTask<Void> task = new GeneralMatrixMultiply(matrixMultiplyCrossoverDimension, alpha, a, b, c.scale(beta));
         pool.invoke(task);
+
+//        final int nRows = a.getNumberOfRows();
+//        final int nCols = b.getNumberOfColumns();
+//        final int nSum = a.getNumberOfColumns();
+//
+//        final double[] mCol = new double[nSum];
+//
+//        final double[] aa = a.unsafeGetElements();
+//        final double[] bb = b.unsafeGetElements();
+//        // Multiply.
+//        for (int col = 0; col < nCols; col++) {
+//            // Copy all elements of column "col" of "m" so that
+//            // will be in contiguous memory.
+//            b.getColumn(col).copyInto(mCol);
+//
+//            for (int row = 0, k = 0; row < nRows; row++) {
+//                double sum = 0;
+//                for (int i = 0; i < nSum; i++) {
+//                    sum +=  aa[k++] * mCol[i];
+//                }
+//
+//                c.set(row, col, sum);
+//            }
+//        }
+
     }
 
     @Override
@@ -68,115 +74,24 @@ public class JBLASLevel3 implements BLASLevel3<DenseMatrix, DenseTriangularMatri
         }
     }
 
-    private static final class BlockedMatrixMultiply extends RecursiveAction {
-        private static final long serialVersionUID = 6647518617695907960L;
+    public static class JBLASLevel3Builder {
+        private int matrixMultiplyLeafDimension = 256;
+        private ForkJoinPool pool = ForkJoinPool.commonPool();
 
-        private final DenseMatrix a, b;
-        private final DenseMatrixBuilder c;
-        private final double alpha;
-        private final int M, N, P;
-        private final int largestDimension;
-
-        private BlockedMatrixMultiply(double alpha, DenseMatrix a, DenseMatrix b, DenseMatrixBuilder c) {
-            this.alpha = alpha;
-
-            this.a = a;
-            this.M = a.getNumberOfRows();
-
-            this.b = b;
-            this.P = b.getNumberOfRows();
-            this.N = b.getNumberOfColumns();
-
-            this.c = c;
-            this.largestDimension = Math.max(M, Math.max(P, N));
+        public JBLASLevel3Builder setPool(ForkJoinPool pool) {
+            this.pool = pool;
+            return this;
         }
 
-            private static int getBlockSize() {
-                return 256;
-            }
-
-            @Override
-            public void compute() {
-                final int blockSize = getBlockSize();
-                final int M = a.getNumberOfRows(), P = a.getNumberOfColumns(), N = b.getNumberOfColumns();
-
-                final int rowGroupsA = (M + blockSize - 1) / blockSize;
-                final int columnGroupsA = (P + blockSize - 1) / blockSize;
-                final int columnGroupsB = (N + blockSize - 1) / blockSize;
-
-                final double[] elementsA = a.unsafeGetElements();
-                final double[] elementsB = a.unsafeGetElements();
-                final double[] elementsC = c.unsafeGetElements();
-
-                IntStream.range(0, rowGroupsA).forEach(i -> {
-                    final double[] workA = new double[blockSize * blockSize];
-                    final double[] workB = new double[blockSize * blockSize];
-                    final double[] workC = new double[blockSize * blockSize];
-
-                    final int pStart = i * blockSize;
-
-                    IntStream.range(0, columnGroupsB).forEach(j -> {
-                        final int qStart = j * blockSize;
-
-                        IntStream.range(0, columnGroupsA).parallel().forEach(k -> {
-                            // Preform the block multiplication
-                            final DenseMatrix blockA = getBlock(elementsA, M, P, workA, blockSize, i, k, ArrayElementOrder.RowMajor);
-                            final DenseMatrix blockB = getBlock(elementsB, P, N, workB, blockSize, k, j, ArrayElementOrder.ColumnMajor);
-                            final int m = blockA.getNumberOfRows(), p = blockB.getNumberOfRows(), n = blockB.getNumberOfColumns();
-
-                            dgemm_rc(m, n, p, workA, workB, workC);
-
-                            for (int blockIndex = 0, blockRow = 0; blockRow < m; blockRow++) {
-                                int index = (pStart + blockRow) * N + qStart;
-                                for (int blockColumn = 0; blockColumn < n; blockColumn++) {
-                                    elementsC[index++] += workC[blockIndex++];
-                                }
-                            }
-                        });
-                    });
-                });
-            }
-
-            private static DenseMatrix getBlock(double[] elements, int rowCount, int columnCount, double[] block, int blockSize, int iBlock, int jBlock, ArrayElementOrder elementOrder) {
-                final int pStart = iBlock * blockSize;
-                final int pEnd = Math.min(pStart + blockSize, rowCount);
-                final int iHeight = pEnd - pStart;
-
-                final int qStart = jBlock * blockSize;
-                final int qEnd = Math.min(qStart + blockSize, columnCount);
-                final int jWidth = qEnd - qStart;
-
-                if (ArrayElementOrder.RowMajor == elementOrder) {
-                    for (int index = 0, p = pStart; p < pEnd; p++, index += jWidth) {
-                        System.arraycopy(elements, p * columnCount + qStart, block, index, jWidth);
-                    }
-                    ArrayElementAccessor2D accessor = new ArrayElementAccessor2D(block, elementOrder, 0, jWidth, iHeight, jWidth);
-                    return new DenseGeneralMatrix(accessor);
-                } else {
-                    for (int i = 0; i < iHeight; i++) {
-                        int p = (pStart + i) * columnCount + qStart;
-                        for (int j = 0; j < jWidth; j++) {
-                            block[j * iHeight + i] = elements[p++];
-                        }
-                    }
-                    ArrayElementAccessor2D accessor = new ArrayElementAccessor2D(block, elementOrder, 0, iHeight, iHeight, jWidth);
-                    return new DenseGeneralMatrix(accessor);
-                }
-
-            }
-
-            private static void dgemm_rc(final int m, final int n, final int p, final double[] a, final double[] b, final double[] c) {
-                for (int i = 0; i < m; i++) {
-                    for (int j = 0; j < n; j++) {
-                        double temp = 0.0;
-                        for (int k = 0; k < p; k++) {
-                            temp += a[p * i + k] * b[p * j + k];
-                        }
-                        c[n * i + j] = temp;
-                    }
-                }
-            }
+        public JBLASLevel3Builder setMatrixMultiplyLeafDimension(int matrixMultiplyLeafDimension) {
+            this.matrixMultiplyLeafDimension = matrixMultiplyLeafDimension;
+            return this;
         }
+
+        public JBLASLevel3 createJBLASLevel3() {
+            return new JBLASLevel3(matrixMultiplyLeafDimension, pool);
+        }
+    }
 
     private static final class GeneralMatrixMultiply extends RecursiveAction {
         private static final long serialVersionUID = -4266937266787772842L;
@@ -202,36 +117,6 @@ public class JBLASLevel3 implements BLASLevel3<DenseMatrix, DenseTriangularMatri
             this.leafDimension = crossoverDimension;
         }
 
-        @Override
-        protected void compute() {
-            if (largestDimension <= leafDimension) {
-                final int m = M / 2, p = P / 2, n = N / 2;
-                computeDirectly(
-                        alpha,
-                        a.slice(0, m, 0, p).compact(), a.slice(0, m, p, P).compact(),
-                        a.slice(m, M, 0, p).compact(), a.slice(m, M, p, P).compact(),
-                        b.slice(0, p, 0, n), b.slice(0, p, n, N), b.slice(p, P, 0, n), b.slice(p, P, n, N),
-                        c.slice(0, m, 0, n), c.slice(0, m, n, N), c.slice(m, M, 0, n), c.slice(m, M, n, N)
-                );
-            } else if (M >= Math.max(P, N)) {
-                final int m = M / 2;
-                invokeAll(
-                        new GeneralMatrixMultiply(leafDimension, alpha, a.slice(0, m, 0, P), b, c.slice(0, m, 0, N)),
-                        new GeneralMatrixMultiply(leafDimension, alpha, a.slice(m, M, 0, P), b, c.slice(m, M, 0, N))
-                );
-            } else if (N >= Math.max(M, P)) {
-                final int n = N / 2;
-                invokeAll(
-                        new GeneralMatrixMultiply(leafDimension, alpha, a, b.slice(0, P, 0, n), c.slice(0, M, 0, n)),
-                        new GeneralMatrixMultiply(leafDimension, alpha, a, b.slice(0, P, n, N), c.slice(0, M, n, N))
-                );
-            } else if (P >= Math.max(M, N)) {
-                final int p = P / 2;
-                new GeneralMatrixMultiply(leafDimension, alpha, a.slice(0, M, 0, p), b.slice(0, p, 0, N), c).invoke();
-                new GeneralMatrixMultiply(leafDimension, alpha, a.slice(0, M, p, P), b.slice(p, P, 0, N), c).invoke();
-            }
-        }
-
         private static void computeDirectly(double alpha,
                                             DenseMatrix a11, DenseMatrix a12, DenseMatrix a21, DenseMatrix a22,
                                             DenseMatrix b11, DenseMatrix b12, DenseMatrix b21, DenseMatrix b22,
@@ -244,10 +129,10 @@ public class JBLASLevel3 implements BLASLevel3<DenseMatrix, DenseTriangularMatri
             final double[] b11_j = new double[p], b12_j = new double[p], b21_j = new double[pp], b22_j = new double[pp];
 
             for (int j = 0; j < n; j++) {
-                b11.getColumn(j).toArray(b11_j);
-                b12.getColumn(j).toArray(b12_j);
-                b21.getColumn(j).toArray(b21_j);
-                b22.getColumn(j).toArray(b22_j);
+                b11.getColumn(j).copyInto(b11_j);
+                b12.getColumn(j).copyInto(b12_j);
+                b21.getColumn(j).copyInto(b21_j);
+                b22.getColumn(j).copyInto(b22_j);
 
                 for (int i = 0; i < m; i++) {
                     double s11 = 0.0, s12 = 0.0, s21 = 0.0, s22 = 0.0;
@@ -289,8 +174,8 @@ public class JBLASLevel3 implements BLASLevel3<DenseMatrix, DenseTriangularMatri
             }
 
             if (n != nn) {
-                b12.getColumn(n).toArray(b12_j);
-                b22.getColumn(n).toArray(b22_j);
+                b12.getColumn(n).copyInto(b12_j);
+                b22.getColumn(n).copyInto(b22_j);
 
                 for (int i = 0; i < m; i++) {
                     double s12 = 0.0, s22 = 0.0;
@@ -322,6 +207,36 @@ public class JBLASLevel3 implements BLASLevel3<DenseMatrix, DenseTriangularMatri
                 }
             }
         }
+
+        @Override
+        protected void compute() {
+            if (largestDimension <= leafDimension) {
+                final int m = M / 2, p = P / 2, n = N / 2;
+                computeDirectly(
+                        alpha,
+                        a.slice(0, m, 0, p).compact(), a.slice(0, m, p, P).compact(),
+                        a.slice(m, M, 0, p).compact(), a.slice(m, M, p, P).compact(),
+                        b.slice(0, p, 0, n), b.slice(0, p, n, N), b.slice(p, P, 0, n), b.slice(p, P, n, N),
+                        c.slice(0, m, 0, n), c.slice(0, m, n, N), c.slice(m, M, 0, n), c.slice(m, M, n, N)
+                );
+            } else if (M >= Math.max(P, N)) {
+                final int m = M / 2;
+                invokeAll(
+                        new GeneralMatrixMultiply(leafDimension, alpha, a.slice(0, m, 0, P), b, c.slice(0, m, 0, N)),
+                        new GeneralMatrixMultiply(leafDimension, alpha, a.slice(m, M, 0, P), b, c.slice(m, M, 0, N))
+                );
+            } else if (N >= Math.max(M, P)) {
+                final int n = N / 2;
+                invokeAll(
+                        new GeneralMatrixMultiply(leafDimension, alpha, a, b.slice(0, P, 0, n), c.slice(0, M, 0, n)),
+                        new GeneralMatrixMultiply(leafDimension, alpha, a, b.slice(0, P, n, N), c.slice(0, M, n, N))
+                );
+            } else if (P >= Math.max(M, N)) {
+                final int p = P / 2;
+                new GeneralMatrixMultiply(leafDimension, alpha, a.slice(0, M, 0, p), b.slice(0, p, 0, N), c).invoke();
+                new GeneralMatrixMultiply(leafDimension, alpha, a.slice(0, M, p, P), b.slice(p, P, 0, N), c).invoke();
+            }
+        }
     }
 
     private static final class TriangularMatrixMultiply extends RecursiveAction {
@@ -347,6 +262,24 @@ public class JBLASLevel3 implements BLASLevel3<DenseMatrix, DenseTriangularMatri
             this.leafDimension = leafDimension;
         }
 
+        private static void computeDirectly(double alpha, DenseTriangularMatrix a, DenseMatrix b, DenseMatrixBuilder c) {
+            final int n = a.getNumberOfRows(), p = b.getNumberOfColumns();
+
+            final double[] b_j = new double[n];
+            for (int j = 0; j < p; j++) {
+                b.getColumn(j).copyInto(b_j);
+
+                for (int i = 0; i < n; i++) {
+                    double sum = 0.0;
+                    for (int k = i; k < n; k++) {
+                        sum += a.get(i, k) * b_j[k];
+                    }
+
+                    c.add(i, j, alpha * sum);
+                }
+            }
+        }
+
         @Override
         protected void compute() {
             if (N <= leafDimension) {
@@ -367,24 +300,6 @@ public class JBLASLevel3 implements BLASLevel3<DenseMatrix, DenseTriangularMatri
                 );
 
                 new GeneralMatrixMultiply(leafDimension, alpha, a.slice(0, n, n, N), b.slice(n, N, 0, P), c.slice(0, n, 0, P)).invoke();
-            }
-        }
-
-        private static void computeDirectly(double alpha, DenseTriangularMatrix a, DenseMatrix b, DenseMatrixBuilder c) {
-            final int n = a.getNumberOfRows(), p = b.getNumberOfColumns();
-
-            final double[] b_j = new double[n];
-            for (int j = 0; j < p; j++) {
-                b.getColumn(j).toArray(b_j);
-
-                for (int i = 0; i < n; i++) {
-                    double sum = 0.0;
-                    for (int k = i; k < n; k++) {
-                        sum += a.get(i, k) * b_j[k];
-                    }
-
-                    c.add(i, j, alpha * sum);
-                }
             }
         }
     }

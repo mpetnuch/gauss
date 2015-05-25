@@ -1,7 +1,5 @@
 package org.mpetnuch.gauss.store;
 
-import org.mpetnuch.gauss.matrix.accessor.ArrayElementOrder;
-
 import java.util.Arrays;
 import java.util.Spliterator;
 
@@ -9,7 +7,7 @@ import java.util.Spliterator;
  * @author Michael Petnuch
  * @version $Id$
  */
-final class ArrayStore2D extends ArrayStore implements Store2D {
+public class ArrayStore2D extends ArrayStore implements Store2D {
     final ArrayStructure2D structure;
 
     protected ArrayStore2D(double[] array, ArrayStructure2D structure) {
@@ -21,12 +19,25 @@ final class ArrayStore2D extends ArrayStore implements Store2D {
         final int rowCount = array.length;
         final int columnCount = array[0].length;
 
-        final ArrayStructure2D structure = new RowMajorArrayStructure2D(rowCount, columnCount);
-        return new ArrayStore2D(structure.flatten(array), structure);
+        return new ArrayStore2DBuilder(rowCount, columnCount).
+                setStride(columnCount).
+                build(flatten(array), ArrayElementOrder.RowMajor);
+    }
+
+    private static double[] flatten(double[][] array) {
+        final int rowCount = array.length;
+        final int columnCount = array[0].length;
+
+        double[] flattenedArray = new double[rowCount * columnCount];
+        for (int index = 0, rowIndex = 0; rowIndex < rowCount; rowIndex++, index += columnCount) {
+            System.arraycopy(array[rowIndex], 0, flattenedArray, index, columnCount);
+        }
+
+        return flattenedArray;
     }
 
     @Override
-    ArrayStructure2D getStructure() {
+    public ArrayStructure2D getStructure() {
         return structure;
     }
 
@@ -44,30 +55,105 @@ final class ArrayStore2D extends ArrayStore implements Store2D {
         return structure.get(array, rowIndex, columnIndex);
     }
 
+    @Override
+    public ArrayStore1D getColumn(int columnIndex) {
+        ArrayStore1D.ArrayStore1DBuilder builder = new ArrayStore1D.ArrayStore1DBuilder(structure.getRowCount());
+        if (ArrayElementOrder.RowMajor == structure.arrayElementOrder) {
+            builder.setOffset(structure.offset + columnIndex);
+            builder.setStride(structure.stride);
+        } else {
+            builder.setOffset(structure.offset + structure.stride * columnIndex);
+            builder.setStride(1);
+        }
+
+        return builder.build(array);
+    }
+
+    @Override
+    public ArrayStore1D getRow(int rowIndex) {
+        ArrayStore1D.ArrayStore1DBuilder builder = new ArrayStore1D.ArrayStore1DBuilder(structure.getColumnCount());
+        if (ArrayElementOrder.RowMajor == structure.arrayElementOrder) {
+            builder.setOffset(structure.offset + structure.stride * rowIndex);
+            builder.setStride(1);
+        } else {
+            builder.setOffset(structure.offset + rowIndex);
+            builder.setStride(structure.stride);
+        }
+
+        return builder.build(array);
+    }
+
+    @Override
+    public ArrayStore2D slice(int rowIndexStart, int rowIndexEnd, int columnIndexStart, int columnIndexEnd) {
+        final int rows = rowIndexEnd - rowIndexStart, columns = columnIndexEnd - columnIndexStart;
+
+        ArrayStore2DBuilder builder = new ArrayStore2DBuilder(rows, columns);
+        builder.setStride(structure.stride);
+
+        if (ArrayElementOrder.RowMajor == structure.arrayElementOrder) {
+            builder.setOffset(structure.offset + structure.stride * rowIndexStart + columnIndexStart);
+        } else {
+            builder.setOffset(structure.offset + structure.stride * columnIndexStart + rowIndexStart);
+        }
+
+        return builder.build(array, structure.arrayElementOrder);
+    }
+
+    @Override
+    public ArrayStore2D transpose() {
+        ArrayStore2DBuilder builder = new ArrayStore2DBuilder(structure.getColumnCount(), structure.getRowCount());
+        builder.setOffset(structure.offset);
+        builder.setStride(structure.stride);
+
+        if (ArrayElementOrder.RowMajor == structure.arrayElementOrder) {
+            return builder.build(array, ArrayElementOrder.ColumnMajor);
+        } else {
+            return builder.build(array, ArrayElementOrder.RowMajor);
+        }
+    }
+
+    @Override
+    public ArrayStore2D compact() {
+        final int rowCount = structure.getRowCount();
+        final int columnCount = structure.getColumnCount();
+
+        return new ArrayStore2DBuilder(rowCount, columnCount).
+                setStride(columnCount).
+                build(toArray(), structure.arrayElementOrder);
+    }
+
+    public void copyInto(double[] copy, int offset) {
+        final int rowCount = structure.getRowCount();
+        final int columnCount = structure.getColumnCount();
+
+        if (ArrayElementOrder.RowMajor == structure.arrayElementOrder) {
+            for (int rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+                final ArrayStore1D row = getRow(rowIndex);
+                row.copyInto(copy, offset + rowIndex * columnCount);
+            }
+        } else {
+            for (int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
+                final ArrayStore1D column = getColumn(columnIndex);
+                column.copyInto(copy, offset + columnIndex * rowCount);
+            }
+        }
+    }
+
     public static class ArrayStore2DBuilder {
-        private final int rowCount, columnCount;
-        private int offset = 0;
+        protected final int rowCount, columnCount;
+        protected int offset = 0;
+        protected int stride = 1;
 
         public ArrayStore2DBuilder(int rowCount, int columnCount) {
             this.rowCount = rowCount;
             this.columnCount = columnCount;
         }
 
-        public ArrayStore2D build(double[] array, int stride, ArrayElementOrder arrayElementOrder) {
+        public ArrayStore2D build(double[] array, ArrayElementOrder arrayElementOrder) {
             return new ArrayStore2D(array, getStructure(arrayElementOrder, stride));
         }
 
-        public ArrayStore2D build(double[] array, ArrayElementOrder arrayElementOrder) {
-            if (arrayElementOrder == ArrayElementOrder.ColumnMajor) {
-                return new ArrayStore2D(array, getStructure(arrayElementOrder, rowCount));
-            } else if (arrayElementOrder == ArrayElementOrder.RowMajor) {
-                return new ArrayStore2D(array, getStructure(arrayElementOrder, columnCount));
-            } else {
-                throw new AssertionError();
-            }
-        }
-
-        private ArrayStructure2D getStructure(ArrayElementOrder arrayElementOrder, int stride) {
+        protected ArrayStructure2D getStructure(ArrayElementOrder arrayElementOrder, int stride) {
             if (arrayElementOrder == ArrayElementOrder.ColumnMajor) {
                 if (rowCount <= stride) {
                     return new ColumnMajorArrayStructure2D(rowCount, columnCount, stride, offset);
@@ -87,18 +173,23 @@ final class ArrayStore2D extends ArrayStore implements Store2D {
             }
         }
 
+        public ArrayStore2DBuilder setStride(int stride) {
+            this.stride = stride;
+            return this;
+        }
+
         public ArrayStore2DBuilder setOffset(int offset) {
             this.offset = offset;
             return this;
         }
     }
 
-    private static final class RowMajorArrayStructure2D extends ArrayStructure2D {
-        private RowMajorArrayStructure2D(int rowCount, int columnCount, int stride, int offset) {
+    protected static final class RowMajorArrayStructure2D extends ArrayStructure2D {
+        protected RowMajorArrayStructure2D(int rowCount, int columnCount, int stride, int offset) {
             super(ArrayElementOrder.RowMajor, rowCount, columnCount, stride, offset);
         }
 
-        private RowMajorArrayStructure2D(int rowCount, int columnCount) {
+        protected RowMajorArrayStructure2D(int rowCount, int columnCount) {
             this(rowCount, columnCount, columnCount, 0);
         }
 
@@ -106,48 +197,24 @@ final class ArrayStore2D extends ArrayStore implements Store2D {
         public final int index(int rowIndex, int columnIndex) {
             return offset + rowIndex * stride + columnIndex;
         }
-
-        @Override
-        public  double[] flatten(double[][] array2D) {
-            final int rowCount = getRowCount();
-            final int columnCount = getColumnCount();
-
-            double[] array = new double[size()];
-            for(int index = 0, rowIndex = 0; rowIndex < rowCount; rowIndex++, index += columnCount) {
-                System.arraycopy(array2D[rowIndex], 0, array, index, columnCount);
-            }
-
-            return array;
-        }
     }
 
-    private static final class ColumnMajorArrayStructure2D extends ArrayStructure2D {
-        private ColumnMajorArrayStructure2D(int rowCount, int columnCount, int stride, int offset) {
+    protected static final class ColumnMajorArrayStructure2D extends ArrayStructure2D {
+        protected ColumnMajorArrayStructure2D(int rowCount, int columnCount, int stride, int offset) {
             super(ArrayElementOrder.ColumnMajor, rowCount, columnCount, stride, offset);
+        }
+
+        protected ColumnMajorArrayStructure2D(int rowCount, int columnCount) {
+            this(rowCount, columnCount, rowCount, 0);
         }
 
         @Override
         public final int index(int rowIndex, int columnIndex) {
             return offset + columnIndex * stride + rowIndex;
         }
-
-        @Override
-        public double[] flatten(double[][] array2D) {
-            final int rowCount = getRowCount();
-            final int columnCount = getColumnCount();
-
-            double[] array = new double[size()];
-            for(int index = 0, rowIndex = 0; rowIndex < rowCount; rowIndex++, index += columnCount) {
-                for(int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
-                    array[index(rowIndex, columnIndex)] = array2D[rowIndex][columnIndex];
-                }
-            }
-
-            return array;
-        }
     }
 
-    private static abstract class ArrayStructure2D extends ArrayStructure {
+    public static abstract class ArrayStructure2D extends ArrayStructure {
         final ArrayElementOrder arrayElementOrder;
         final int stride;
 
@@ -167,8 +234,6 @@ final class ArrayStore2D extends ArrayStore implements Store2D {
                     throw new AssertionError();
             }
         }
-
-        abstract double[] flatten(double[][] array2D);
 
         abstract int index(int rowIndex, int columnIndex);
 

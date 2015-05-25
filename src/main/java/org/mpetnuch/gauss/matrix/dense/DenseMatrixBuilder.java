@@ -1,29 +1,22 @@
 package org.mpetnuch.gauss.matrix.dense;
 
 import org.mpetnuch.gauss.matrix.MatrixBuilder;
-import org.mpetnuch.gauss.matrix.accessor.MutableArrayElementAccessor2D;
+import org.mpetnuch.gauss.store.MutableArrayStore2D;
 
-import static org.mpetnuch.gauss.matrix.accessor.ArrayElementOrder.RowMajor;
 
 /**
  * @author Michael Petnuch
  * @version $Id$
  */
 public class DenseMatrixBuilder implements MatrixBuilder<DenseMatrix, DenseMatrixBuilder> {
-    private final MutableArrayElementAccessor2D elementAccessor;
+    private final MutableArrayStore2D arrayStore;
 
-    private DenseMatrixBuilder(MutableArrayElementAccessor2D elementAccessor) {
-        this.elementAccessor = elementAccessor;
-    }
-
-    public double[] unsafeGetElements() {
-        return elementAccessor.elements;
+    private DenseMatrixBuilder(MutableArrayStore2D arrayStore) {
+        this.arrayStore = arrayStore;
     }
 
     public static DenseMatrixBuilder create(int rowCount, int columnCount) {
-        final double[] elements = new double[rowCount * columnCount];
-        MutableArrayElementAccessor2D elementAccessor = new MutableArrayElementAccessor2D(elements, RowMajor, 0, columnCount, rowCount, columnCount);
-        return new DenseMatrixBuilder(elementAccessor);
+        return new DenseMatrixBuilder(MutableArrayStore2D.of(rowCount, columnCount));
     }
 
     @Override
@@ -34,28 +27,28 @@ public class DenseMatrixBuilder implements MatrixBuilder<DenseMatrix, DenseMatri
             return this;
         }
 
-        elementAccessor.replaceAll(x -> x * alpha);
+        arrayStore.replaceAll(x -> x * alpha);
         return this;
     }
 
     @Override
     public DenseMatrixBuilder add(int rowIndex, int columnIndex, double alpha) {
-        elementAccessor.increment(rowIndex, columnIndex, alpha);
+        arrayStore.increment(rowIndex, columnIndex, alpha);
         return this;
     }
 
     public DenseMatrixBuilder set(int rowIndex, int columnIndex, double alpha) {
-        elementAccessor.set(rowIndex, columnIndex, alpha);
+        arrayStore.set(rowIndex, columnIndex, alpha);
         return this;
     }
 
     @Override
     public DenseMatrixBuilder slice(int rowIndexStart, int rowIndexEnd, int columnIndexStart, int columnIndexEnd) {
-        return new DenseMatrixBuilder(elementAccessor.slice(rowIndexStart, rowIndexEnd, columnIndexStart, columnIndexEnd));
+        return new DenseMatrixBuilder(arrayStore.slice(rowIndexStart, rowIndexEnd, columnIndexStart, columnIndexEnd));
     }
 
     @Override
     public DenseMatrix build() {
-        return new DenseGeneralMatrix(elementAccessor.immutableCopy());
+        return new DenseGeneralMatrix(arrayStore.immutableCopy());
     }
 }

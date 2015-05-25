@@ -1,10 +1,10 @@
 package org.mpetnuch.gauss.matrix.dense;
 
-import java.util.stream.DoubleStream;
-
 import org.mpetnuch.gauss.matrix.Matrix;
 import org.mpetnuch.gauss.matrix.Vector;
-import org.mpetnuch.gauss.matrix.accessor.ArrayElementAccessor1D;
+import org.mpetnuch.gauss.store.ArrayStore1D;
+
+import java.util.stream.DoubleStream;
 
 /**
  * @author Michael Petnuch
@@ -12,9 +12,9 @@ import org.mpetnuch.gauss.matrix.accessor.ArrayElementAccessor1D;
  */
 public class DenseVector implements Vector  {
     private static final long serialVersionUID = 1577827666390044084L;
-    private final ArrayElementAccessor1D elementAccessor;
+    private final ArrayStore1D elementAccessor;
 
-    public DenseVector(ArrayElementAccessor1D elementAccessor) {
+    public DenseVector(ArrayStore1D elementAccessor) {
         this.elementAccessor = elementAccessor;
     }
 
@@ -25,7 +25,7 @@ public class DenseVector implements Vector  {
 
     @Override
     public int length() {
-        return elementAccessor.getLength();
+        return elementAccessor.getStructure().size();
     }
 
     @Override
@@ -49,7 +49,12 @@ public class DenseVector implements Vector  {
     }
 
     @Override
-    public void toArray(double[] array) {
-        elementAccessor.toArray(array);
+    public double[] toArray() {
+        return elementAccessor.toArray();
+    }
+
+    @Override
+    public void copyInto(double[] copy) {
+        elementAccessor.copyInto(copy);
     }
 }

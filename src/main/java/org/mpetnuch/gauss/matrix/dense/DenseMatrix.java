@@ -21,12 +21,11 @@ package org.mpetnuch.gauss.matrix.dense;
 
 import org.mpetnuch.gauss.linearalgebra.blas3.BLASLevel3;
 import org.mpetnuch.gauss.linearalgebra.blas3.JBLASLevel3;
-import org.mpetnuch.gauss.matrix.*;
-import org.mpetnuch.gauss.matrix.accessor.ArrayElementAccessor1D;
-import org.mpetnuch.gauss.matrix.accessor.ArrayElementAccessor2D;
-import org.mpetnuch.gauss.matrix.accessor.ArrayElementOrder;
-
-import java.util.stream.IntStream;
+import org.mpetnuch.gauss.matrix.Matrix;
+import org.mpetnuch.gauss.matrix.MatrixType;
+import org.mpetnuch.gauss.store.ArrayElementOrder;
+import org.mpetnuch.gauss.store.ArrayStore1D;
+import org.mpetnuch.gauss.store.ArrayStore2D;
 
 /**
  * @author Michael Petnuch
@@ -36,31 +35,27 @@ public abstract class DenseMatrix implements Matrix {
     private static final long serialVersionUID = -7150013139589271348L;
     private static final JBLASLevel3 DEFAULT_BLAS_LEVEL3 = new JBLASLevel3.JBLASLevel3Builder().createJBLASLevel3();
 
-    protected final ArrayElementAccessor2D elementAccessor;
+    protected final ArrayStore2D elementStore;
     protected BLASLevel3<DenseMatrix, DenseTriangularMatrix, DenseSymmetricMatrix, DenseMatrixBuilder> blasLevel3 = DEFAULT_BLAS_LEVEL3;
 
-    DenseMatrix(ArrayElementAccessor2D elementAccessor) {
-        this.elementAccessor = elementAccessor;
+    DenseMatrix(ArrayStore2D elementStore) {
+        this.elementStore = elementStore;
     }
 
     public static DenseMatrix from(double[][] matrix) {
-        int rowCount = matrix.length;
-        int columnCount = matrix[0].length;
+        final int rowCount = matrix.length;
+        final int columnCount = matrix[0].length;
         for (int i = 1; i < rowCount; i++) {
             if (matrix[i].length != columnCount) {
                 throw new IllegalArgumentException("Not a matrix, all rows must be same size.");
             }
         }
 
-        double[] elements = new double[rowCount * columnCount];
-        ArrayElementAccessor2D elementAccessor = new ArrayElementAccessor2D(elements, ArrayElementOrder.RowMajor, 0, columnCount, rowCount, columnCount);
-
         if (rowCount != columnCount) {
-            IntStream.range(0, rowCount).forEach(rowIndex ->
-                    System.arraycopy(matrix[rowIndex], 0, elements, rowIndex * columnCount, columnCount));
-
-            return new DenseGeneralMatrix(elementAccessor);
+            return new DenseGeneralMatrix(ArrayStore2D.from(matrix));
         }
+
+        final double[] elements = new double[rowCount * columnCount];
 
         // Special method for square-matrices, try to guess the matrix qualifiers
         boolean diagonal = true, upper = true, lower = true, symmetrical = true, unit = true;
@@ -82,31 +77,24 @@ public abstract class DenseMatrix implements Matrix {
             }
         }
 
-        if(upper || lower) {
-            TriangularMatrixType triangularMatrixType = upper ? TriangularMatrixType.UpperTriangular : TriangularMatrixType.LowerTriangular;
-            MatrixDiagonalType matrixDiagonalType = unit ? MatrixDiagonalType.Unit : MatrixDiagonalType.NonUnit;
-            return new DenseTriangularMatrix(elementAccessor, triangularMatrixType, matrixDiagonalType);
-        }
+        final ArrayStore2D arrayStore = new ArrayStore2D.ArrayStore2DBuilder(rowCount, columnCount).
+                setOffset(0).
+                setStride(columnCount).
+                build(elements, ArrayElementOrder.RowMajor);
 
-        return new DenseGeneralMatrix(elementAccessor);
+        return new DenseGeneralMatrix(arrayStore);
     }
-
-    abstract DenseMatrix create(ArrayElementAccessor2D elementAccessor);
 
     public double[] unsafeGetElements() {
-        return elementAccessor.elements;
+        return elementStore.unsafeGetElements();
     }
+
+    abstract DenseMatrix create(ArrayStore2D elementAccessor);
 
     public DenseMatrix multiply(DenseMatrix that) {
         final int M = this.getNumberOfRows(), N = that.getNumberOfColumns();
-        DenseMatrixBuilder resultBuilder = DenseMatrixBuilder.create(M, N);
-
-        if(that instanceof DenseTriangularMatrix) {
-            blasLevel3.dtrmm(1.0, MatrixSide.RIGHT, (DenseTriangularMatrix) that, this, 0.0, resultBuilder);
-        } else {
-            blasLevel3.dgemm(1.0, this, that, 0.0, resultBuilder);
-        }
-
+        final DenseMatrixBuilder resultBuilder = DenseMatrixBuilder.create(M, N);
+        blasLevel3.dgemm(1.0, this, that, 0.0, resultBuilder);
         return resultBuilder.build();
     }
 
@@ -117,55 +105,42 @@ public abstract class DenseMatrix implements Matrix {
 
     @Override
     public int getNumberOfRows() {
-        return elementAccessor.getRowCount();
+        return elementStore.getStructure().getRowCount();
     }
 
     @Override
     public int getNumberOfColumns() {
-        return elementAccessor.getColumnCount();
+        return elementStore.getStructure().getColumnCount();
     }
 
     @Override
     public final double get(int rowIndex, int columnIndex) {
-        return elementAccessor.get(rowIndex, columnIndex);
+        return elementStore.get(rowIndex, columnIndex);
     }
 
     @Override
     public MatrixColumn getColumn(int columnIndex) {
-        return new DenseMatrixColumn(elementAccessor.getColumn(columnIndex), columnIndex);
+        return new DenseMatrixColumn(elementStore.getColumn(columnIndex), columnIndex);
     }
 
     @Override
     public MatrixRow getRow(int rowIndex) {
-        return new DenseMatrixRow(elementAccessor.getRow(rowIndex), rowIndex);
+        return new DenseMatrixRow(elementStore.getRow(rowIndex), rowIndex);
     }
 
     @Override
     public DenseMatrix slice(int rowStart, int rowEnd, int columnStart, int columnEnd) {
-        return create(elementAccessor.slice(rowStart, rowEnd, columnStart, columnEnd));
+        return create(elementStore.slice(rowStart, rowEnd, columnStart, columnEnd));
     }
 
     @Override
     public DenseMatrix transpose() {
-        return create(elementAccessor.transpose());
-    }
-
-    @Override
-    public DenseMatrix reshape(int rowCount, int columnCount) {
-        return create(elementAccessor.reshape(rowCount, columnCount));
+        return create(elementStore.transpose());
     }
 
     @Override
     public DenseMatrix compact() {
-        return create(elementAccessor.compact());
-    }
-
-    public double[] toArray(ArrayElementOrder elementOrder) {
-        return elementAccessor.toArray(elementOrder);
-    }
-
-    public void toArray(double[] copy, ArrayElementOrder elementOrder) {
-        elementAccessor.toArray(copy, elementOrder);
+        return create(elementStore.compact());
     }
 
     public void setBlasLevel3(BLASLevel3<DenseMatrix, DenseTriangularMatrix, DenseSymmetricMatrix, DenseMatrixBuilder> blasLevel3) {
@@ -176,7 +151,7 @@ public abstract class DenseMatrix implements Matrix {
         private static final long serialVersionUID = -3104116423696752144L;
         private final int index;
 
-        private DenseMatrixRow(ArrayElementAccessor1D elementAccessor, int index) {
+        private DenseMatrixRow(ArrayStore1D elementAccessor, int index) {
             super(elementAccessor);
             this.index = index;
         }
@@ -191,7 +166,7 @@ public abstract class DenseMatrix implements Matrix {
         private static final long serialVersionUID = 7774119470007792583L;
         private final int index;
 
-        private DenseMatrixColumn(ArrayElementAccessor1D elementAccessor, int index) {
+        private DenseMatrixColumn(ArrayStore1D elementAccessor, int index) {
             super(elementAccessor);
             this.index = index;
         }

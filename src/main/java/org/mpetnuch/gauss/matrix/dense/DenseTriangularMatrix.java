@@ -4,18 +4,20 @@ import org.mpetnuch.gauss.matrix.MatrixDiagonalType;
 import org.mpetnuch.gauss.matrix.MatrixSide;
 import org.mpetnuch.gauss.matrix.TriangularMatrix;
 import org.mpetnuch.gauss.matrix.TriangularMatrixType;
-import org.mpetnuch.gauss.matrix.accessor.ArrayElementAccessor2D;
+import org.mpetnuch.gauss.store.ArrayStore2D;
 
 /**
  * @author Michael Petnuch
  * @version $Id$
  */
 public class DenseTriangularMatrix extends DenseMatrix implements TriangularMatrix {
+    private static final long serialVersionUID = 7525387465248808621L;
+
     private final TriangularMatrixType triangularMatrixType;
     private final MatrixDiagonalType matrixDiagonalType;
 
-    DenseTriangularMatrix(ArrayElementAccessor2D elementAccessor, TriangularMatrixType triangularMatrixType, MatrixDiagonalType matrixDiagonalType) {
-        super(elementAccessor);
+    DenseTriangularMatrix(ArrayStore2D elementStore, TriangularMatrixType triangularMatrixType, MatrixDiagonalType matrixDiagonalType) {
+        super(elementStore);
         this.triangularMatrixType = triangularMatrixType;
         this.matrixDiagonalType = matrixDiagonalType;
     }
@@ -29,11 +31,11 @@ public class DenseTriangularMatrix extends DenseMatrix implements TriangularMatr
 
     @Override
     public DenseTriangularMatrix triangularSlice(int rowStart, int rowEnd) {
-        return create(elementAccessor.slice(rowStart, rowEnd, rowStart, rowEnd));
+        return create(elementStore.slice(rowStart, rowEnd, rowStart, rowEnd));
     }
 
     @Override
-    DenseTriangularMatrix create(ArrayElementAccessor2D elementAccessor) {
+    DenseTriangularMatrix create(ArrayStore2D elementAccessor) {
         return new DenseTriangularMatrix(elementAccessor, triangularMatrixType, matrixDiagonalType);
     }
 

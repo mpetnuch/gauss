@@ -30,6 +30,37 @@ public class ArrayStore1D extends ArrayStore implements Store1D {
         return structure;
     }
 
+    public ArrayStore1D slice(int startIndex, int endIndex) {
+        return null;
+    }
+
+    @Override
+    public ArrayStore2D reshape(int rowCount, int columnCount) {
+        return null;
+    }
+
+    @Override
+    public ArrayStore1D compact() {
+        if (structure.offset == 0 && structure.stride == 1) {
+            return this;
+        }
+
+        return this;
+    }
+
+    @Override
+    public void copyInto(double[] copy, int offset) {
+        if (structure.stride == 1) {
+            System.arraycopy(array, structure.offset, copy, offset, structure.size);
+            return;
+        }
+
+        // else we need to access the array in a strided fashion to copy into the requested array
+        for (int i = structure.offset, k = offset; i < structure.size; i += structure.stride) {
+            copy[k++] = array[i];
+        }
+    }
+
     public static class ArrayStore1DBuilder {
         private final int length;
         private int offset = 0;
