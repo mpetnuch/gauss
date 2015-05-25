@@ -29,29 +29,6 @@ public class JBLASLevel3 implements BLASLevel3<DenseMatrix, DenseTriangularMatri
         ForkJoinTask<Void> task = new GeneralMatrixMultiply(matrixMultiplyCrossoverDimension, alpha, a, b, c.scale(beta));
         pool.invoke(task);
 
-//        final int nRows = a.getNumberOfRows();
-//        final int nCols = b.getNumberOfColumns();
-//        final int nSum = a.getNumberOfColumns();
-//
-//        final double[] mCol = new double[nSum];
-//
-//        final double[] aa = a.unsafeGetElements();
-//        final double[] bb = b.unsafeGetElements();
-//        // Multiply.
-//        for (int col = 0; col < nCols; col++) {
-//            // Copy all elements of column "col" of "m" so that
-//            // will be in contiguous memory.
-//            b.getColumn(col).copyInto(mCol);
-//
-//            for (int row = 0, k = 0; row < nRows; row++) {
-//                double sum = 0;
-//                for (int i = 0; i < nSum; i++) {
-//                    sum +=  aa[k++] * mCol[i];
-//                }
-//
-//                c.set(row, col, sum);
-//            }
-//        }
 
     }
 
@@ -238,6 +215,7 @@ public class JBLASLevel3 implements BLASLevel3<DenseMatrix, DenseTriangularMatri
             }
         }
     }
+
 
     private static final class TriangularMatrixMultiply extends RecursiveAction {
         private static final long serialVersionUID = 2566423202392340965L;

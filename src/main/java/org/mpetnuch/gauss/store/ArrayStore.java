@@ -103,6 +103,14 @@ public abstract class ArrayStore implements StoreAnyD {
             return StreamSupport.doubleStream(spliterator(array), false);
         }
 
+        public int getOffset() {
+            return offset;
+        }
+
+        public int getStrides(int dimension) {
+            return strides[dimension];
+        }
+
         @Override
         public int dimension() {
             return dimension;

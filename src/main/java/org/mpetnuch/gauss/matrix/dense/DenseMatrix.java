@@ -85,10 +85,6 @@ public abstract class DenseMatrix implements Matrix {
         return new DenseGeneralMatrix(arrayStore);
     }
 
-    public double[] unsafeGetElements() {
-        return elementStore.unsafeGetElements();
-    }
-
     abstract DenseMatrix create(ArrayStore2D elementAccessor);
 
     public DenseMatrix multiply(DenseMatrix that) {

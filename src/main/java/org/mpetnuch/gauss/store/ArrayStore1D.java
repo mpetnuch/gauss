@@ -55,8 +55,9 @@ public class ArrayStore1D extends ArrayStore implements Store1D {
             return;
         }
 
+        final int fence = structure.offset + structure.size * structure.stride;
         // else we need to access the array in a strided fashion to copy into the requested array
-        for (int i = structure.offset, k = offset; i < structure.size; i += structure.stride) {
+        for (int i = structure.offset, k = offset; i < fence; i += structure.stride) {
             copy[k++] = array[i];
         }
     }

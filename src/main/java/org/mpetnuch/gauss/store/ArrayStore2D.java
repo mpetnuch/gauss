@@ -260,7 +260,7 @@ public class ArrayStore2D extends ArrayStore implements Store2D {
             return dimensions[1];
         }
 
-        public double get(double[] array, int rowIndex, int columnIndex) {
+        private double get(double[] array, int rowIndex, int columnIndex) {
             return array[index(rowIndex, columnIndex)];
         }
     }
