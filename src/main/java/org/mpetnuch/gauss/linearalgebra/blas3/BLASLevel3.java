@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Michael Petnuch. All Rights Reserved.
+ * Copyright (c) 2015, Michael Petnuch. All Rights Reserved.
  *
  * This file `BLASLevel3.java` is part of Gauss.
  *
@@ -10,20 +10,16 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
 package org.mpetnuch.gauss.linearalgebra.blas3;
 
-import org.mpetnuch.gauss.matrix.Matrix;
-import org.mpetnuch.gauss.matrix.MatrixBuilder;
-import org.mpetnuch.gauss.matrix.MatrixSide;
-import org.mpetnuch.gauss.matrix.SymmetricMatrix;
-import org.mpetnuch.gauss.matrix.TriangularMatrix;
+import org.mpetnuch.gauss.matrix.*;
 
 /**
  * @author Michael Petnuch

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Michael Petnuch. All Rights Reserved.
+ * Copyright (c) 2015, Michael Petnuch. All Rights Reserved.
  *
  * This file `Matrix.java` is part of Gauss.
  *
@@ -10,11 +10,11 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
 package org.mpetnuch.gauss.matrix;
@@ -61,7 +61,7 @@ public interface Matrix extends Serializable {
     }
 
     default double[][] toArray() {
-        return rows().map(v -> v.stream().toArray()).toArray(double[][]::new);
+        return rows().map(MatrixRow::toArray).toArray(n -> new double[n][]);
     }
 
     default void print() {

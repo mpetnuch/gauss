@@ -1,3 +1,22 @@
+/*
+ * Copyright (c) 2015, Michael Petnuch. All Rights Reserved.
+ *
+ * This file `JBLASLevel3.java` is part of Gauss.
+ *
+ * Gauss is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.mpetnuch.gauss.linearalgebra.blas3;
 
 import org.mpetnuch.gauss.matrix.MatrixSide;
@@ -16,20 +35,18 @@ import java.util.concurrent.RecursiveAction;
  * @version $Id$
  */
 public class JBLASLevel3 implements BLASLevel3<DenseMatrix, DenseTriangularMatrix, DenseSymmetricMatrix, DenseMatrixBuilder> {
-    private final int matrixMultiplyCrossoverDimension;
+    private final int crossoverDimension;
     private final ForkJoinPool pool;
 
-    private JBLASLevel3(int matrixMultiplyCrossoverDimension, ForkJoinPool pool) {
-        this.matrixMultiplyCrossoverDimension = matrixMultiplyCrossoverDimension;
+    private JBLASLevel3(int crossoverDimension, ForkJoinPool pool) {
+        this.crossoverDimension = crossoverDimension;
         this.pool = pool;
     }
 
     @Override
     public void dgemm(double alpha, DenseMatrix a, DenseMatrix b, double beta, DenseMatrixBuilder c) {
-        ForkJoinTask<Void> task = new GeneralMatrixMultiply(matrixMultiplyCrossoverDimension, alpha, a, b, c.scale(beta));
+        ForkJoinTask<Void> task = new GeneralMatrixMultiply(crossoverDimension, alpha, a, b, c.scale(beta));
         pool.invoke(task);
-
-
     }
 
     @Override
@@ -44,7 +61,7 @@ public class JBLASLevel3 implements BLASLevel3<DenseMatrix, DenseTriangularMatri
     @Override
     public void dtrmm(double alpha, MatrixSide matrixSide, DenseTriangularMatrix a, DenseMatrix b, double beta, DenseMatrixBuilder c) {
         if (MatrixSide.LEFT == matrixSide) {
-            ForkJoinTask<Void> task = new TriangularMatrixMultiply(matrixMultiplyCrossoverDimension, alpha, a, b, c.scale(beta));
+            ForkJoinTask<Void> task = new TriangularMatrixMultiply(crossoverDimension, alpha, a, b, c.scale(beta));
             pool.invoke(task);
         } else {
             dgemm(alpha, b, a, beta, c);
@@ -52,7 +69,7 @@ public class JBLASLevel3 implements BLASLevel3<DenseMatrix, DenseTriangularMatri
     }
 
     public static class JBLASLevel3Builder {
-        private int matrixMultiplyLeafDimension = 256;
+        private int crossoverDimension = 256;
         private ForkJoinPool pool = ForkJoinPool.commonPool();
 
         public JBLASLevel3Builder setPool(ForkJoinPool pool) {
@@ -60,13 +77,13 @@ public class JBLASLevel3 implements BLASLevel3<DenseMatrix, DenseTriangularMatri
             return this;
         }
 
-        public JBLASLevel3Builder setMatrixMultiplyLeafDimension(int matrixMultiplyLeafDimension) {
-            this.matrixMultiplyLeafDimension = matrixMultiplyLeafDimension;
+        public JBLASLevel3Builder setCrossoverDimension(int crossoverDimension) {
+            this.crossoverDimension = crossoverDimension;
             return this;
         }
 
         public JBLASLevel3 createJBLASLevel3() {
-            return new JBLASLevel3(matrixMultiplyLeafDimension, pool);
+            return new JBLASLevel3(crossoverDimension, pool);
         }
     }
 
@@ -215,7 +232,6 @@ public class JBLASLevel3 implements BLASLevel3<DenseMatrix, DenseTriangularMatri
             }
         }
     }
-
 
     private static final class TriangularMatrixMultiply extends RecursiveAction {
         private static final long serialVersionUID = 2566423202392340965L;

@@ -1,3 +1,22 @@
+/*
+ * Copyright (c) 2015, Michael Petnuch. All Rights Reserved.
+ *
+ * This file `ArrayStore2DTest.java` is part of Gauss.
+ *
+ * Gauss is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.mpetnuch.gauss.store;
 
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
@@ -44,14 +63,14 @@ public class ArrayStore2DTest {
         final Array2DRowRealMatrix aa = new Array2DRowRealMatrix(dataA.clone());
         final Array2DRowRealMatrix bb = new Array2DRowRealMatrix(dataB.clone());
 
-        IntStream.range(0, 100).mapToLong(value -> {
+        IntStream.range(0, 10).mapToLong(value -> {
             final long t1 = System.currentTimeMillis();
             final DenseMatrix c = a.multiply(b);
             c.get(0, 0);
             return System.currentTimeMillis() - t1;
         }).average().ifPresent(System.out::println);
 
-        IntStream.range(0, 100).mapToLong(value -> {
+        IntStream.range(0, 10).mapToLong(value -> {
             final long t1 = System.currentTimeMillis();
             final Array2DRowRealMatrix cc = aa.multiply(bb);
             cc.getEntry(0, 0);
