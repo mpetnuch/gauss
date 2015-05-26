@@ -25,11 +25,10 @@ import org.mpetnuch.gauss.matrix.Matrix;
 import org.mpetnuch.gauss.matrix.MatrixDiagonalType;
 import org.mpetnuch.gauss.matrix.MatrixType;
 import org.mpetnuch.gauss.matrix.TriangularMatrixType;
-import org.mpetnuch.gauss.store.array.ArrayElementOrder;
 import org.mpetnuch.gauss.store.array.ArrayStore1D;
 import org.mpetnuch.gauss.store.array.ArrayStore2D;
 import org.mpetnuch.gauss.store.array.ArrayStore2D.ArrayStructure2D;
-import org.mpetnuch.gauss.store.array.ArrayStore2D.ArrayStructure2DBuilder;
+import org.mpetnuch.gauss.store.array.ArrayStore2D.RowMajorArrayStructure2D;
 
 /**
  * @author Michael Petnuch
@@ -55,8 +54,15 @@ public abstract class DenseMatrix implements Matrix {
             }
         }
 
+        final ArrayStructure2D structure = new RowMajorArrayStructure2D(rowCount, columnCount);
         if (rowCount != columnCount) {
-            return new DenseGeneralMatrix(ArrayStore2D.from(matrix));
+            double[] flattenedArray = new double[rowCount * columnCount];
+            for (int index = 0, rowIndex = 0; rowIndex < rowCount; rowIndex++, index += columnCount) {
+                System.arraycopy(matrix[rowIndex], 0, flattenedArray, index, columnCount);
+            }
+
+            final ArrayStore2D arrayStore = new ArrayStore2D(flattenedArray, structure);
+            return new DenseGeneralMatrix(arrayStore);
         }
 
         final double[] elements = new double[rowCount * columnCount];
@@ -81,14 +87,7 @@ public abstract class DenseMatrix implements Matrix {
             }
         }
 
-        final ArrayStructure2D structure = new ArrayStructure2DBuilder(rowCount, columnCount).
-                setArrayElementOrder(ArrayElementOrder.RowMajor).
-                setOffset(0).
-                setStride(columnCount).
-                build();
-
         final ArrayStore2D arrayStore = new ArrayStore2D(elements, structure);
-
         if (upper || lower) {
             final TriangularMatrixType triangularMatrixType = upper ?
                     TriangularMatrixType.UpperTriangular : TriangularMatrixType.LowerTriangular;
@@ -109,8 +108,9 @@ public abstract class DenseMatrix implements Matrix {
     abstract DenseMatrix create(ArrayStore2D elementAccessor);
 
     public DenseMatrix multiply(DenseMatrix that) {
-        final int M = this.getNumberOfRows(), N = that.getNumberOfColumns();
-        final DenseMatrixBuilder resultBuilder = DenseMatrixBuilder.create(M, N);
+        final int M = getNumberOfRows(), N = getNumberOfColumns();
+        final DenseMatrixBuilder resultBuilder = new DenseMatrixBuilder(M, N);
+
         blasLevel3.dgemm(1.0, this, that, 0.0, resultBuilder);
         return resultBuilder.build();
     }
@@ -122,12 +122,12 @@ public abstract class DenseMatrix implements Matrix {
 
     @Override
     public int getNumberOfRows() {
-        return store.getStructure().getRowCount();
+        return store.structure().getRowCount();
     }
 
     @Override
     public int getNumberOfColumns() {
-        return store.getStructure().getColumnCount();
+        return store.structure().getColumnCount();
     }
 
     @Override

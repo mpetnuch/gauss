@@ -27,14 +27,14 @@ import java.util.function.DoubleConsumer;
  * @author Michael Petnuch
  */
 public class StridedArrayStructureSpliterator implements Spliterator.OfDouble {
-    private final ArrayStore.ArrayStructure structure;
+    private final ArrayStructure structure;
     private final double[] array;
     private final int stride;
     private final int fence;  // one past last index
     private final int characteristics = IMMUTABLE | ORDERED | SIZED | SUBSIZED;
     private int index;        // current index, modified on advance/split
 
-    public StridedArrayStructureSpliterator(ArrayStore.ArrayStructure structure, double[] array) {
+    public StridedArrayStructureSpliterator(ArrayStructure structure, double[] array) {
         this.stride = structure.getStrides(0);
         this.structure = structure;
         this.array = array;
@@ -43,7 +43,7 @@ public class StridedArrayStructureSpliterator implements Spliterator.OfDouble {
         this.fence = 1 + structure.offset + (structure.size - 1) * stride;
     }
 
-    public StridedArrayStructureSpliterator(ArrayStore.ArrayStructure structure, double[] array, int stride, int index, int fence) {
+    public StridedArrayStructureSpliterator(ArrayStructure structure, double[] array, int stride, int index, int fence) {
         this.structure = structure;
         this.array = array;
         this.stride = stride;

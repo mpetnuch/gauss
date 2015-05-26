@@ -27,7 +27,7 @@ import java.util.function.DoubleConsumer;
  * @author Michael Petnuch
  */
 public class ArrayStructureSpliterator implements Spliterator.OfDouble {
-    private final ArrayStore.ArrayStructure structure;
+    private final ArrayStructure structure;
     private final int[] indices;
     private final double[] array;
     private final int fence;  // one past last element to be processed
@@ -35,7 +35,7 @@ public class ArrayStructureSpliterator implements Spliterator.OfDouble {
     private int index;        // current index int the array, modified on advance/split
     private int elementIndex; // current element to be processed, modified on advance/split
 
-    public ArrayStructureSpliterator(ArrayStore.ArrayStructure structure, double[] array) {
+    public ArrayStructureSpliterator(ArrayStructure structure, double[] array) {
         this.structure = structure;
         this.array = array;
         this.indices = new int[structure.dimension];
@@ -45,7 +45,7 @@ public class ArrayStructureSpliterator implements Spliterator.OfDouble {
         this.elementIndex = 0;
     }
 
-    public ArrayStructureSpliterator(ArrayStore.ArrayStructure structure, double[] array, int[] indices, int index, int elementIndex, int fence) {
+    public ArrayStructureSpliterator(ArrayStructure structure, double[] array, int[] indices, int index, int elementIndex, int fence) {
         this.structure = structure;
         this.array = array;
         this.indices = indices;

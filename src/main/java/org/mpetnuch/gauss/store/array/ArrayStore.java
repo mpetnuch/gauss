@@ -20,9 +20,8 @@
 package org.mpetnuch.gauss.store.array;
 
 import org.mpetnuch.gauss.store.StoreAnyD;
-import org.mpetnuch.gauss.store.Structure;
 
-import java.util.Arrays;
+import java.util.Objects;
 import java.util.PrimitiveIterator;
 import java.util.Spliterators;
 import java.util.stream.DoubleStream;
@@ -32,16 +31,25 @@ import java.util.stream.StreamSupport;
  * @author Michael Petnuch
  * @version $Id$
  */
-public abstract class ArrayStore implements StoreAnyD {
+public abstract class ArrayStore<Structure extends ArrayStructure> implements StoreAnyD {
     protected final double[] array;
+    protected final Structure structure;
 
-    protected ArrayStore(double[] array) {
+    protected ArrayStore(double[] array, Structure structure) {
+        Objects.requireNonNull(array, "Array cannot be null");
+        Objects.requireNonNull(structure, "Structure cannot be null");
+
+        if (structure.size > array.length) {
+            throw new IllegalArgumentException("Structure is not compatible with array size");
+        }
+
+        this.structure = structure;
         this.array = array;
     }
 
-    public abstract ArrayStructure getStructure();
-
-    public abstract ArrayStore compact();
+    public Structure structure() {
+        return structure;
+    }
 
     public abstract void copyInto(double[] copy, int offset);
 
@@ -57,21 +65,21 @@ public abstract class ArrayStore implements StoreAnyD {
 
     @Override
     public final int dimension(int dimension) {
-        return getStructure().dimensionLength(dimension);
+        return structure.dimensionLength(dimension);
     }
 
     @Override
     public final int size() {
-        return getStructure().size();
+        return structure.size();
     }
 
     @Override
     public double get(int... indices) {
-        if (getStructure().dimension() != indices.length) {
+        if (structure().dimension() != indices.length) {
             throw new IllegalArgumentException();
         }
 
-        return array[getStructure().index(indices)];
+        return array[structure.index(indices)];
     }
 
     @Override
@@ -82,52 +90,5 @@ public abstract class ArrayStore implements StoreAnyD {
     @Override
     public DoubleStream stream() {
         return StreamSupport.doubleStream(spliterator(), false);
-    }
-
-    protected abstract static class ArrayStructure implements Structure {
-        protected final int dimension;
-        protected final int size;
-        protected final int offset;
-        protected final int[] dimensions, strides;
-
-        public ArrayStructure(int[] dimensions, int[] strides, int offset) {
-            this.offset = offset;
-            this.strides = strides;
-            this.dimension = dimensions.length;
-            this.dimensions = dimensions;
-            this.size = Arrays.stream(dimensions).reduce(1, (left, right) -> left * right);
-        }
-
-        public int index(int... indices) {
-            int index = offset;
-            for (int n = 0; n < dimension; n++) {
-                index += indices[n] * strides[n];
-            }
-
-            return index;
-        }
-
-        public int getOffset() {
-            return offset;
-        }
-
-        public int getStrides(int dimension) {
-            return strides[dimension];
-        }
-
-        @Override
-        public int dimension() {
-            return dimension;
-        }
-
-        @Override
-        public int dimensionLength(int dimension) {
-            return dimensions[dimension];
-        }
-
-        @Override
-        public int size() {
-            return size;
-        }
     }
 }

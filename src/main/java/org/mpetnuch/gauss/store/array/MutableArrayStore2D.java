@@ -28,13 +28,16 @@ import java.util.function.DoubleUnaryOperator;
  */
 public class MutableArrayStore2D extends ArrayStore2D {
 
-    public MutableArrayStore2D(double[] array, ArrayStructure2D structure) {
-        super(array, structure);
+    public MutableArrayStore2D(ArrayStructure2D structure) {
+        super(new double[structure.size()], structure);
     }
 
-    public static MutableArrayStore2D of(int rowCount, int columnCount) {
-        final double[] array = new double[rowCount * columnCount];
-        return new MutableArrayStore2D(array, new RowMajorArrayStructure2D(rowCount, columnCount));
+    public MutableArrayStore2D(int rowCount, int columnCount) {
+        super(new double[rowCount * columnCount], new RowMajorArrayStructure2D(rowCount, columnCount));
+    }
+
+    public MutableArrayStore2D(double[] array, ArrayStructure2D structure) {
+        super(array, structure);
     }
 
     @Override

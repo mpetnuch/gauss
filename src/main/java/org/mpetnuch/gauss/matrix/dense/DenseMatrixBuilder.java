@@ -27,14 +27,14 @@ import org.mpetnuch.gauss.store.array.MutableArrayStore2D;
  * @version $Id$
  */
 public class DenseMatrixBuilder implements MatrixBuilder<DenseMatrix, DenseMatrixBuilder> {
-    private final MutableArrayStore2D arrayStore;
+    private final MutableArrayStore2D store;
 
-    private DenseMatrixBuilder(MutableArrayStore2D arrayStore) {
-        this.arrayStore = arrayStore;
+    private DenseMatrixBuilder(MutableArrayStore2D store) {
+        this.store = store;
     }
 
-    public static DenseMatrixBuilder create(int rowCount, int columnCount) {
-        return new DenseMatrixBuilder(MutableArrayStore2D.of(rowCount, columnCount));
+    public DenseMatrixBuilder(int rowCount, int columnCount) {
+        this.store = new MutableArrayStore2D(rowCount, columnCount);
     }
 
     @Override
@@ -45,28 +45,28 @@ public class DenseMatrixBuilder implements MatrixBuilder<DenseMatrix, DenseMatri
             return this;
         }
 
-        arrayStore.replaceAll(x -> x * alpha);
+        store.replaceAll(x -> x * alpha);
         return this;
     }
 
     @Override
     public DenseMatrixBuilder add(int rowIndex, int columnIndex, double alpha) {
-        arrayStore.increment(rowIndex, columnIndex, alpha);
+        store.increment(rowIndex, columnIndex, alpha);
         return this;
     }
 
     public DenseMatrixBuilder set(int rowIndex, int columnIndex, double alpha) {
-        arrayStore.set(rowIndex, columnIndex, alpha);
+        store.set(rowIndex, columnIndex, alpha);
         return this;
     }
 
     @Override
     public DenseMatrixBuilder slice(int rowIndexStart, int rowIndexEnd, int columnIndexStart, int columnIndexEnd) {
-        return new DenseMatrixBuilder(arrayStore.slice(rowIndexStart, rowIndexEnd, columnIndexStart, columnIndexEnd));
+        return new DenseMatrixBuilder(store.slice(rowIndexStart, rowIndexEnd, columnIndexStart, columnIndexEnd));
     }
 
     @Override
     public DenseMatrix build() {
-        return new DenseGeneralMatrix(arrayStore.immutableCopy());
+        return new DenseGeneralMatrix(store.immutableCopy());
     }
 }

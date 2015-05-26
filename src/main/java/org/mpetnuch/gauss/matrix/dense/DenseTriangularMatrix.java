@@ -43,7 +43,8 @@ public class DenseTriangularMatrix extends DenseMatrix implements TriangularMatr
 
     public DenseMatrix multiply(DenseMatrix that) {
         final int M = this.getNumberOfRows(), N = that.getNumberOfColumns();
-        DenseMatrixBuilder resultBuilder = DenseMatrixBuilder.create(M, N);
+        final DenseMatrixBuilder resultBuilder = new DenseMatrixBuilder(M, N);
+
         blasLevel3.dtrmm(1.0, MatrixSide.LEFT, this, that, 0.0, resultBuilder);
         return resultBuilder.build();
     }

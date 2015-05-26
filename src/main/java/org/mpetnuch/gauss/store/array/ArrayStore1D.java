@@ -30,17 +30,9 @@ import java.util.Spliterator;
  * @author Michael Petnuch
  * @version $Id$
  */
-public class ArrayStore1D extends ArrayStore implements Store1D {
-    private final ArrayStructure1D structure;
-
+public class ArrayStore1D extends ArrayStore<ArrayStore1D.ArrayStructure1D> implements Store1D {
     public ArrayStore1D(double[] array, ArrayStructure1D structure) {
-        super(array);
-
-        this.structure = structure;
-    }
-
-    public ArrayStore1D from(double[] array) {
-        return new ArrayStore1D(array, new ArrayStructure1D(array.length, 1, 0));
+        super(array, structure);
     }
 
     @Override
@@ -48,13 +40,8 @@ public class ArrayStore1D extends ArrayStore implements Store1D {
         return array[structure.index(index)];
     }
 
-    @Override
-    public ArrayStructure1D getStructure() {
-        return structure;
-    }
-
-    public ArrayStore1D slice(int startIndex, int endIndex) {
-        return new ArrayStore1D(array, structure.slice(startIndex, endIndex));
+    public ArrayStore1D slice(int startInclusive, int endExclusive) {
+        return new ArrayStore1D(array, structure.slice(startInclusive, endExclusive));
     }
 
     @Override
@@ -62,8 +49,11 @@ public class ArrayStore1D extends ArrayStore implements Store1D {
         return new ArrayStore2D(array, structure.reshape(rowCount, columnCount));
     }
 
-    @Override
     public ArrayStore1D compact() {
+        if (structure.isCompact()) {
+            return this;
+        }
+
         if (structure.index(0) == 0 && structure.stride == 1) {
             return this; // already compact!
         } else {
@@ -125,8 +115,8 @@ public class ArrayStore1D extends ArrayStore implements Store1D {
             return new RowMajorArrayStructure2D(rowCount, columnCount, stride, offset);
         }
 
-        public ArrayStructure1D slice(int startIndex, int endIndex) {
-            return new ArrayStructure1D(endIndex - startIndex, stride, index(startIndex));
+        public ArrayStructure1D slice(int startInclusive, int endExclusive) {
+            return new ArrayStructure1D(endExclusive - startInclusive, stride, index(startInclusive));
         }
     }
 }

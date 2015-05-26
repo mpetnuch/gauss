@@ -33,7 +33,7 @@ public interface Vector extends Serializable {
 
     Matrix reshape(int rows, int columns);
 
-    Vector slice(int start, int end);
+    Vector slice(int startInclusive, int endExclusive);
 
     Vector compact();
 

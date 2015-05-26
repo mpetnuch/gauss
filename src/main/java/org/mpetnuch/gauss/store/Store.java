@@ -37,4 +37,6 @@ public interface Store extends Iterable<Double> {
     DoubleStream stream();
 
     int size();
+
+    Structure structure();
 }

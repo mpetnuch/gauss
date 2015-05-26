@@ -43,7 +43,7 @@ public class DenseVector implements Vector  {
 
     @Override
     public int size() {
-        return elementAccessor.getStructure().size();
+        return elementAccessor.structure().size();
     }
 
     @Override
@@ -52,8 +52,8 @@ public class DenseVector implements Vector  {
     }
 
     @Override
-    public Vector slice(int startIndex, int endIndex) {
-        return new DenseVector(elementAccessor.slice(startIndex, endIndex));
+    public Vector slice(int startInclusive, int endExclusive) {
+        return new DenseVector(elementAccessor.slice(startInclusive, endExclusive));
     }
 
     @Override

@@ -29,12 +29,9 @@ import java.util.Spliterator;
  * @author Michael Petnuch
  * @version $Id$
  */
-public class ArrayStore2D extends ArrayStore implements Store2D {
-    final ArrayStructure2D structure;
-
+public class ArrayStore2D extends ArrayStore<ArrayStore2D.ArrayStructure2D> implements Store2D {
     public ArrayStore2D(double[] array, ArrayStructure2D structure) {
-        super(array);
-        this.structure = structure;
+        super(array, structure);
     }
 
     public static ArrayStore2D from(double[][] array) {
@@ -85,13 +82,8 @@ public class ArrayStore2D extends ArrayStore implements Store2D {
     }
 
     @Override
-    public ArrayStructure2D getStructure() {
-        return structure;
-    }
-
-    @Override
     public double get(int... indices) {
-        if (getStructure().dimension() != indices.length) {
+        if (structure().dimension() != indices.length) {
             throw new IllegalArgumentException();
         }
 
@@ -123,7 +115,6 @@ public class ArrayStore2D extends ArrayStore implements Store2D {
         return new ArrayStore2D(array, structure.transpose());
     }
 
-    @Override
     public ArrayStore2D compact() {
         return new ArrayStore2D(toArray(), structure.compact());
     }
@@ -192,12 +183,12 @@ public class ArrayStore2D extends ArrayStore implements Store2D {
         }
     }
 
-    protected static final class RowMajorArrayStructure2D extends ArrayStructure2D {
-        protected RowMajorArrayStructure2D(int rowCount, int columnCount, int stride, int offset) {
+    public static final class RowMajorArrayStructure2D extends ArrayStructure2D {
+        public RowMajorArrayStructure2D(int rowCount, int columnCount, int stride, int offset) {
             super(ArrayElementOrder.RowMajor, rowCount, columnCount, stride, offset);
         }
 
-        protected RowMajorArrayStructure2D(int rowCount, int columnCount) {
+        public RowMajorArrayStructure2D(int rowCount, int columnCount) {
             this(rowCount, columnCount, columnCount, 0);
         }
 
@@ -212,10 +203,11 @@ public class ArrayStore2D extends ArrayStore implements Store2D {
         }
 
         @Override
-        public ArrayStructure2D slice(int rowIndexStart, int rowIndexEnd, int columnIndexStart, int columnIndexEnd) {
-            final int rowCount = rowIndexEnd - rowIndexStart;
-            final int columnCount = columnIndexEnd - columnIndexStart;
-            final int sliceOffset = stride * rowIndexStart + columnIndexStart;
+        public ArrayStructure2D slice(int rowStartInclusive, int rowEndExclusive,
+                                      int columnStartInclusive, int columnEndExclusive) {
+            final int rowCount = rowEndExclusive - rowStartInclusive;
+            final int columnCount = columnEndExclusive - columnStartInclusive;
+            final int sliceOffset = stride * rowStartInclusive + columnStartInclusive;
 
             return new RowMajorArrayStructure2D(rowCount, columnCount, stride, offset + sliceOffset);
         }
@@ -236,12 +228,12 @@ public class ArrayStore2D extends ArrayStore implements Store2D {
         }
     }
 
-    protected static final class ColumnMajorArrayStructure2D extends ArrayStructure2D {
-        protected ColumnMajorArrayStructure2D(int rowCount, int columnCount, int stride, int offset) {
+    public static final class ColumnMajorArrayStructure2D extends ArrayStructure2D {
+        private ColumnMajorArrayStructure2D(int rowCount, int columnCount, int stride, int offset) {
             super(ArrayElementOrder.ColumnMajor, rowCount, columnCount, stride, offset);
         }
 
-        protected ColumnMajorArrayStructure2D(int rowCount, int columnCount) {
+        public ColumnMajorArrayStructure2D(int rowCount, int columnCount) {
             this(rowCount, columnCount, rowCount, 0);
         }
 
@@ -256,10 +248,11 @@ public class ArrayStore2D extends ArrayStore implements Store2D {
         }
 
         @Override
-        public ArrayStructure2D slice(int rowIndexStart, int rowIndexEnd, int columnIndexStart, int columnIndexEnd) {
-            final int rowCount = rowIndexEnd - rowIndexStart;
-            final int columnCount = columnIndexEnd - columnIndexStart;
-            final int sliceOffset = stride * columnIndexStart + rowIndexStart;
+        public ArrayStructure2D slice(int rowStartInclusive, int rowEndExclusive,
+                                      int columnStartInclusive, int columnEndExclusive) {
+            final int rowCount = rowEndExclusive - rowStartInclusive;
+            final int columnCount = columnEndExclusive - columnStartInclusive;
+            final int sliceOffset = stride * columnStartInclusive + rowStartInclusive;
 
             return new ColumnMajorArrayStructure2D(rowCount, columnCount, stride, offset + sliceOffset);
         }
@@ -302,6 +295,7 @@ public class ArrayStore2D extends ArrayStore implements Store2D {
                 default:
                     throw new AssertionError();
             }
+
         }
 
         public abstract int index(int rowIndex, int columnIndex);
@@ -310,7 +304,8 @@ public class ArrayStore2D extends ArrayStore implements Store2D {
 
         public abstract ArrayStructure2D transpose();
 
-        public abstract ArrayStructure2D slice(int rowIndexStart, int rowIndexEnd, int columnIndexStart, int columnIndexEnd);
+        public abstract ArrayStructure2D slice(int rowStartInclusive, int rowEndExclusive,
+                                               int columnStartInclusive, int columnEndExclusive);
 
         public abstract ArrayStructure1D row(int rowIndex);
 

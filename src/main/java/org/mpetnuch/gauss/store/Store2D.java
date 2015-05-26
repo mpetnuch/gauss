@@ -30,8 +30,6 @@ public interface Store2D extends Store {
 
     int getColumnCount();
 
-    Store2D compact();
-
     Store2D transpose();
 
     Store2D slice(int rowIndexStart, int rowIndexEnd, int columnIndexStart, int columnIndexEnd);
