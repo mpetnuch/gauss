@@ -68,14 +68,14 @@ public class JBlasLevel3Test {
         final Array2DRowRealMatrix aa = new Array2DRowRealMatrix(generateData(M, P));
         final Array2DRowRealMatrix bb = new Array2DRowRealMatrix(generateData(P, N));
 
-        IntStream.range(0, 1).mapToLong(value -> {
+        IntStream.range(0, 100).mapToLong(value -> {
             final long t1 = System.currentTimeMillis();
             final DenseMatrix c = a.multiply(b);
             c.get(0, 0);
             return System.currentTimeMillis() - t1;
         }).average().ifPresent(System.out::println);
 
-        IntStream.range(0, 1).mapToLong(value -> {
+        IntStream.range(0, 100).mapToLong(value -> {
             final long t1 = System.currentTimeMillis();
             final Array2DRowRealMatrix cc = aa.multiply(bb);
             cc.getEntry(0, 0);
