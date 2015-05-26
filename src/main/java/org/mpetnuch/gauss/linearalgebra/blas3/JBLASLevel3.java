@@ -19,16 +19,16 @@
 
 package org.mpetnuch.gauss.linearalgebra.blas3;
 
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinTask;
+import java.util.concurrent.RecursiveAction;
+
 import org.mpetnuch.gauss.matrix.MatrixSide;
 import org.mpetnuch.gauss.matrix.TriangularMatrixType;
 import org.mpetnuch.gauss.matrix.dense.DenseMatrix;
 import org.mpetnuch.gauss.matrix.dense.DenseMatrixBuilder;
 import org.mpetnuch.gauss.matrix.dense.DenseSymmetricMatrix;
 import org.mpetnuch.gauss.matrix.dense.DenseTriangularMatrix;
-
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.ForkJoinTask;
-import java.util.concurrent.RecursiveAction;
 
 /**
  * @author Michael Petnuch
@@ -111,14 +111,42 @@ public class JBLASLevel3 implements BLASLevel3<DenseMatrix, DenseTriangularMatri
             this.leafDimension = crossoverDimension;
         }
 
-        private static void computeDirectly(double alpha,
-                                            DenseMatrix a11, DenseMatrix a12, DenseMatrix a21, DenseMatrix a22,
-                                            DenseMatrix b11, DenseMatrix b12, DenseMatrix b21, DenseMatrix b22,
-                                            DenseMatrixBuilder c11, DenseMatrixBuilder c12,
-                                            DenseMatrixBuilder c21, DenseMatrixBuilder c22) {
-            final int m = a11.getNumberOfRows(), mm = a21.getNumberOfRows();
-            final int p = b11.getNumberOfRows(), pp = b21.getNumberOfRows();
-            final int n = b11.getNumberOfColumns(), nn = b12.getNumberOfColumns();
+        @Override
+        protected void compute() {
+            if (largestDimension <= leafDimension) {
+                compute(alpha, a, b, c);
+            } else if (M >= Math.max(P, N)) {
+                final int m = M / 2;
+                invokeAll(
+                        new GeneralMatrixMultiply(leafDimension, alpha, a.slice(0, m, 0, P), b, c.slice(0, m, 0, N)),
+                        new GeneralMatrixMultiply(leafDimension, alpha, a.slice(m, M, 0, P), b, c.slice(m, M, 0, N))
+                );
+            } else if (N >= Math.max(M, P)) {
+                final int n = N / 2;
+                invokeAll(
+                        new GeneralMatrixMultiply(leafDimension, alpha, a, b.slice(0, P, 0, n), c.slice(0, M, 0, n)),
+                        new GeneralMatrixMultiply(leafDimension, alpha, a, b.slice(0, P, n, N), c.slice(0, M, n, N))
+                );
+            } else if (P >= Math.max(M, N)) {
+                final int p = P / 2;
+                new GeneralMatrixMultiply(leafDimension, alpha, a.slice(0, M, 0, p), b.slice(0, p, 0, N), c).invoke();
+                new GeneralMatrixMultiply(leafDimension, alpha, a.slice(0, M, p, P), b.slice(p, P, 0, N), c).invoke();
+            }
+        }
+
+        private void compute(double alpha, DenseMatrix a, DenseMatrix b, DenseMatrixBuilder c) {
+            final int m = M / 2, p = P / 2, n = N / 2;
+
+            final DenseMatrix a11 = a.slice(0, m, 0, p).compact(), a12 = a.slice(0, m, p, P).compact();
+            final DenseMatrix a21 = a.slice(m, M, 0, p).compact(), a22 = a.slice(m, M, p, P).compact();
+
+            final DenseMatrix b11 = b.slice(0, p, 0, n), b12 = b.slice(0, p, n, N);
+            final DenseMatrix b21 = b.slice(p, P, 0, n), b22 = b.slice(p, P, n, N);
+
+            final DenseMatrixBuilder c11 = c.slice(0, m, 0, n), c12 = c.slice(0, m, n, N);
+            final DenseMatrixBuilder c21 = c.slice(m, M, 0, n), c22 = c.slice(m, M, n, N);
+
+            final int mm = a21.getNumberOfRows(), pp = b21.getNumberOfRows(), nn = b12.getNumberOfColumns();
 
             final double[] b11_j = new double[p], b12_j = new double[p], b21_j = new double[pp], b22_j = new double[pp];
 
@@ -199,36 +227,6 @@ public class JBLASLevel3 implements BLASLevel3<DenseMatrix, DenseTriangularMatri
 
                     c22.add(m, n, alpha * s22);
                 }
-            }
-        }
-
-        @Override
-        protected void compute() {
-            if (largestDimension <= leafDimension) {
-                final int m = M / 2, p = P / 2, n = N / 2;
-                computeDirectly(
-                        alpha,
-                        a.slice(0, m, 0, p).compact(), a.slice(0, m, p, P).compact(),
-                        a.slice(m, M, 0, p).compact(), a.slice(m, M, p, P).compact(),
-                        b.slice(0, p, 0, n), b.slice(0, p, n, N), b.slice(p, P, 0, n), b.slice(p, P, n, N),
-                        c.slice(0, m, 0, n), c.slice(0, m, n, N), c.slice(m, M, 0, n), c.slice(m, M, n, N)
-                );
-            } else if (M >= Math.max(P, N)) {
-                final int m = M / 2;
-                invokeAll(
-                        new GeneralMatrixMultiply(leafDimension, alpha, a.slice(0, m, 0, P), b, c.slice(0, m, 0, N)),
-                        new GeneralMatrixMultiply(leafDimension, alpha, a.slice(m, M, 0, P), b, c.slice(m, M, 0, N))
-                );
-            } else if (N >= Math.max(M, P)) {
-                final int n = N / 2;
-                invokeAll(
-                        new GeneralMatrixMultiply(leafDimension, alpha, a, b.slice(0, P, 0, n), c.slice(0, M, 0, n)),
-                        new GeneralMatrixMultiply(leafDimension, alpha, a, b.slice(0, P, n, N), c.slice(0, M, n, N))
-                );
-            } else if (P >= Math.max(M, N)) {
-                final int p = P / 2;
-                new GeneralMatrixMultiply(leafDimension, alpha, a.slice(0, M, 0, p), b.slice(0, p, 0, N), c).invoke();
-                new GeneralMatrixMultiply(leafDimension, alpha, a.slice(0, M, p, P), b.slice(p, P, 0, N), c).invoke();
             }
         }
     }

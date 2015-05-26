@@ -157,7 +157,11 @@ public abstract class DenseMatrix implements Matrix {
 
     @Override
     public DenseMatrix compact() {
-        return create(store.compact());
+        if(store.isCompact()) {
+            return this;
+        } else {
+            return create(store.compact());
+        }
     }
 
     public void setBlasLevel3(BLASLevel3<DenseMatrix, DenseTriangularMatrix, DenseSymmetricMatrix, DenseMatrixBuilder> blasLevel3) {

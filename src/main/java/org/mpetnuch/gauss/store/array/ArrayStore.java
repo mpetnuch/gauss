@@ -19,21 +19,21 @@
 
 package org.mpetnuch.gauss.store.array;
 
-import org.mpetnuch.gauss.store.StoreAnyD;
-
 import java.util.Objects;
 import java.util.PrimitiveIterator;
 import java.util.Spliterators;
 import java.util.stream.DoubleStream;
 import java.util.stream.StreamSupport;
 
+import org.mpetnuch.gauss.store.StoreAnyD;
+
 /**
  * @author Michael Petnuch
  * @version $Id$
  */
 public abstract class ArrayStore<Structure extends ArrayStructure> implements StoreAnyD {
-    protected final double[] array;
-    protected final Structure structure;
+    final double[] array;
+    final Structure structure;
 
     protected ArrayStore(double[] array, Structure structure) {
         Objects.requireNonNull(array, "Array cannot be null");
@@ -63,6 +63,10 @@ public abstract class ArrayStore<Structure extends ArrayStructure> implements St
         return copy;
     }
 
+    public boolean isCompact() {
+        return array.length == size() && structure.isCompact();
+    }
+
     @Override
     public final int dimension(int dimension) {
         return structure.dimensionLength(dimension);
@@ -75,7 +79,7 @@ public abstract class ArrayStore<Structure extends ArrayStructure> implements St
 
     @Override
     public double get(int... indices) {
-        if (structure().dimension() != indices.length) {
+        if (structure.dimension() != indices.length) {
             throw new IllegalArgumentException();
         }
 

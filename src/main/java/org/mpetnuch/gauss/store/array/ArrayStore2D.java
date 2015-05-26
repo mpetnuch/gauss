@@ -19,11 +19,11 @@
 
 package org.mpetnuch.gauss.store.array;
 
-import org.mpetnuch.gauss.store.Store2D;
-import org.mpetnuch.gauss.store.array.ArrayStore1D.ArrayStructure1D;
-
 import java.util.Arrays;
 import java.util.Spliterator;
+
+import org.mpetnuch.gauss.store.Store2D;
+import org.mpetnuch.gauss.store.array.ArrayStore1D.ArrayStructure1D;
 
 /**
  * @author Michael Petnuch
@@ -116,7 +116,7 @@ public class ArrayStore2D extends ArrayStore<ArrayStore2D.ArrayStructure2D> impl
     }
 
     public ArrayStore2D compact() {
-        if (structure.isCompact() && array.length == size()) {
+        if(isCompact()) {
             return this;
         } else {
             return new ArrayStore2D(toArray(), structure.compact());

@@ -19,12 +19,12 @@
 
 package org.mpetnuch.gauss.store.array;
 
+import java.util.Arrays;
+import java.util.Spliterator;
+
 import org.mpetnuch.gauss.store.Store1D;
 import org.mpetnuch.gauss.store.array.ArrayStore2D.ArrayStructure2D;
 import org.mpetnuch.gauss.store.array.ArrayStore2D.RowMajorArrayStructure2D;
-
-import java.util.Arrays;
-import java.util.Spliterator;
 
 /**
  * @author Michael Petnuch
@@ -50,7 +50,7 @@ public class ArrayStore1D extends ArrayStore<ArrayStore1D.ArrayStructure1D> impl
     }
 
     public ArrayStore1D compact() {
-        if (structure.isCompact() && array.length == size()) {
+        if (isCompact()) {
             return this;
         } else {
             return new ArrayStore1D(toArray(), structure.compact());
@@ -60,13 +60,13 @@ public class ArrayStore1D extends ArrayStore<ArrayStore1D.ArrayStructure1D> impl
     @Override
     public void copyInto(double[] copy, int offset) {
         if (structure.stride == 1) {
-            System.arraycopy(array, structure.index(0), copy, offset, size());
+            System.arraycopy(array, structure.offset, copy, offset, size());
             return;
         }
 
         final int fence = structure.index(size() - 1) + 1;
         // else we need to access the array in a strided fashion to copy into the requested array
-        for (int i = structure.index(0), k = offset; i < fence; i += structure.stride) {
+        for (int i = structure.offset, k = offset; i < fence; i += structure.stride) {
             copy[k++] = array[i];
         }
     }
@@ -74,7 +74,7 @@ public class ArrayStore1D extends ArrayStore<ArrayStore1D.ArrayStructure1D> impl
     @Override
     public Spliterator.OfDouble spliterator() {
         if (structure.stride == 1) {
-            return Arrays.spliterator(array, structure.index(0), structure.index(size() - 1) + 1);
+            return Arrays.spliterator(array, structure.offset, structure.index(size() - 1) + 1);
         } else {
             return new StridedArrayStructureSpliterator(structure, array);
         }

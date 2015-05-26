@@ -19,18 +19,18 @@
 
 package org.mpetnuch.gauss.linearalgebra.blas3;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
+import java.util.stream.IntStream;
+
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.mpetnuch.gauss.matrix.dense.DenseMatrix;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
-import java.util.stream.IntStream;
 
 /**
  * @author Michael Petnuch
@@ -49,7 +49,7 @@ public class JBlasLevel3Test {
     @Parameterized.Parameters
     public static List<int[]> primeNumbers() {
         final List<int[]> parameters = new ArrayList<>();
-        parameters.add(new int[]{3000, 2500, 3500});
+        parameters.add(new int[]{2048, 2048, 2048});
         return parameters;
     }
 
@@ -69,18 +69,18 @@ public class JBlasLevel3Test {
         final Array2DRowRealMatrix bb = new Array2DRowRealMatrix(generateData(P, N));
 
         IntStream.range(0, 100).mapToLong(value -> {
-            final long t1 = System.currentTimeMillis();
+            final long start = System.currentTimeMillis();
             final DenseMatrix c = a.multiply(b);
             c.get(0, 0);
-            return System.currentTimeMillis() - t1;
-        }).average().ifPresent(System.out::println);
+            return System.currentTimeMillis() - start;
+        }).average().ifPresent(delta -> System.out.printf("Michael: %0.3fs", delta / 1000.0));
 
         IntStream.range(0, 100).mapToLong(value -> {
-            final long t1 = System.currentTimeMillis();
+            final long start = System.currentTimeMillis();
             final Array2DRowRealMatrix cc = aa.multiply(bb);
             cc.getEntry(0, 0);
-            return System.currentTimeMillis() - t1;
-        }).average().ifPresent(System.out::println);
+            return System.currentTimeMillis() - start;
+        }).average().ifPresent(delta -> System.out.printf("Apache: %0.3fs", delta / 1000.0));
     }
 
     @Test
@@ -96,7 +96,7 @@ public class JBlasLevel3Test {
 
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {
-                Assert.assertEquals(c.get(i, j), cc.getEntry(i, j), 1.0e-6);
+                Assert.assertEquals(c.get(i, j), cc.getEntry(i, j), 1.0e-10);
             }
         }
     }
