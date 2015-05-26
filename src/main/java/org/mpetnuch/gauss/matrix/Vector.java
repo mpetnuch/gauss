@@ -41,6 +41,8 @@ public interface Vector extends Serializable {
 
     double[] toArray();
 
+    void copyInto(double[] copy, int offset);
+
     void copyInto(double[] copy);
 
     default Matrix toColumnMatrix() {

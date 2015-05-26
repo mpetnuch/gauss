@@ -23,7 +23,7 @@ import org.mpetnuch.gauss.matrix.MatrixDiagonalType;
 import org.mpetnuch.gauss.matrix.MatrixSide;
 import org.mpetnuch.gauss.matrix.TriangularMatrix;
 import org.mpetnuch.gauss.matrix.TriangularMatrixType;
-import org.mpetnuch.gauss.store.ArrayStore2D;
+import org.mpetnuch.gauss.store.array.ArrayStore2D;
 
 /**
  * @author Michael Petnuch
@@ -35,8 +35,8 @@ public class DenseTriangularMatrix extends DenseMatrix implements TriangularMatr
     private final TriangularMatrixType triangularMatrixType;
     private final MatrixDiagonalType matrixDiagonalType;
 
-    DenseTriangularMatrix(ArrayStore2D elementStore, TriangularMatrixType triangularMatrixType, MatrixDiagonalType matrixDiagonalType) {
-        super(elementStore);
+    DenseTriangularMatrix(ArrayStore2D store, TriangularMatrixType triangularMatrixType, MatrixDiagonalType matrixDiagonalType) {
+        super(store);
         this.triangularMatrixType = triangularMatrixType;
         this.matrixDiagonalType = matrixDiagonalType;
     }
@@ -50,7 +50,7 @@ public class DenseTriangularMatrix extends DenseMatrix implements TriangularMatr
 
     @Override
     public DenseTriangularMatrix triangularSlice(int rowStart, int rowEnd) {
-        return create(elementStore.slice(rowStart, rowEnd, rowStart, rowEnd));
+        return create(store.slice(rowStart, rowEnd, rowStart, rowEnd));
     }
 
     @Override

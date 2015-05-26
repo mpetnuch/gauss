@@ -17,7 +17,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.mpetnuch.gauss.store;
+package org.mpetnuch.gauss.store.array;
 
 import java.util.Arrays;
 import java.util.function.DoubleUnaryOperator;
@@ -39,18 +39,7 @@ public class MutableArrayStore2D extends ArrayStore2D {
 
     @Override
     public MutableArrayStore2D slice(int rowIndexStart, int rowIndexEnd, int columnIndexStart, int columnIndexEnd) {
-        final int rows = rowIndexEnd - rowIndexStart, columns = columnIndexEnd - columnIndexStart;
-
-        MutableArrayStore2DBuilder builder = new MutableArrayStore2DBuilder(rows, columns);
-        builder.setStride(structure.stride);
-
-        if (ArrayElementOrder.RowMajor == structure.arrayElementOrder) {
-            builder.setOffset(structure.offset + structure.stride * rowIndexStart + columnIndexStart);
-        } else {
-            builder.setOffset(structure.offset + structure.stride * columnIndexStart + rowIndexStart);
-        }
-
-        return builder.build(array, structure.arrayElementOrder);
+        return new MutableArrayStore2D(array, structure.slice(rowIndexStart, rowIndexEnd, columnIndexStart, columnIndexEnd));
     }
 
     public void set(int rowIndex, int columnIndex, double value) {
@@ -66,20 +55,6 @@ public class MutableArrayStore2D extends ArrayStore2D {
     }
 
     public ArrayStore2D immutableCopy() {
-        return new ArrayStore2D.ArrayStore2DBuilder(structure.getRowCount(), structure.getColumnCount()).
-                setOffset(structure.offset).
-                setStride(structure.stride).
-                build(array.clone(), structure.arrayElementOrder);
-    }
-
-    public static class MutableArrayStore2DBuilder extends ArrayStore2DBuilder {
-        public MutableArrayStore2DBuilder(int rowCount, int columnCount) {
-            super(rowCount, columnCount);
-        }
-
-        @Override
-        public MutableArrayStore2D build(double[] array, ArrayElementOrder arrayElementOrder) {
-            return new MutableArrayStore2D(array, getStructure(arrayElementOrder, stride));
-        }
+        return new ArrayStore2D(array.clone(), structure);
     }
 }

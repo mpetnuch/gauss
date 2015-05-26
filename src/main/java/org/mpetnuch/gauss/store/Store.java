@@ -20,6 +20,7 @@
 package org.mpetnuch.gauss.store;
 
 import java.util.PrimitiveIterator;
+import java.util.Spliterator;
 import java.util.stream.DoubleStream;
 
 /**
@@ -27,8 +28,11 @@ import java.util.stream.DoubleStream;
  * @version $Id$
  */
 public interface Store extends Iterable<Double> {
+
     @Override
     PrimitiveIterator.OfDouble iterator();
+
+    Spliterator.OfDouble spliterator();
 
     DoubleStream stream();
 

@@ -19,7 +19,7 @@
 
 package org.mpetnuch.gauss.matrix.dense;
 
-import org.mpetnuch.gauss.store.ArrayStore2D;
+import org.mpetnuch.gauss.store.array.ArrayStore2D;
 
 /**
  * @author Michael Petnuch

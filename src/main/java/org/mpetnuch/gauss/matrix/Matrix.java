@@ -60,8 +60,12 @@ public interface Matrix extends Serializable {
         return this.getNumberOfRows() * this.getNumberOfColumns();
     }
 
-    default double[][] toArray() {
-        return rows().map(MatrixRow::toArray).toArray(n -> new double[n][]);
+    default double[][] toArray2D() {
+        return rows().map(MatrixRow::toArray).toArray(double[][]::new);
+    }
+
+    default double[] toArray() {
+        return rows().flatMapToDouble(MatrixRow::stream).toArray();
     }
 
     default void print() {
@@ -82,10 +86,10 @@ public interface Matrix extends Serializable {
     }
 
     interface MatrixRow extends Vector {
-        int getIndex();
+        int getRowIndex();
     }
 
     interface MatrixColumn extends Vector {
-        int getIndex();
+        int getColumnIndex();
     }
 }

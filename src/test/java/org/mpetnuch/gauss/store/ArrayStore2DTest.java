@@ -23,6 +23,7 @@ import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mpetnuch.gauss.matrix.dense.DenseMatrix;
+import org.mpetnuch.gauss.store.array.ArrayStore2D;
 
 import java.util.Arrays;
 import java.util.Random;
@@ -49,7 +50,7 @@ public class ArrayStore2DTest {
 
     @Test
     public void matrixMult() {
-        final int M = 3227, N = 4589, P = 3505;
+        final int M = 315, N = 502, P = 431;
         final Random randomStream = new Random((long) M * N * P);
         final double[][] dataA = new double[M][];
         Arrays.setAll(dataA, value -> randomStream.doubles(P).toArray());

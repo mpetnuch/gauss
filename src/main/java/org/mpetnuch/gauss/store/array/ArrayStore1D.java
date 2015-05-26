@@ -17,7 +17,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.mpetnuch.gauss.store;
+package org.mpetnuch.gauss.store.array;
+
+import org.mpetnuch.gauss.store.Store1D;
 
 import java.util.Arrays;
 import java.util.Spliterator;
@@ -29,7 +31,7 @@ import java.util.Spliterator;
 public class ArrayStore1D extends ArrayStore implements Store1D {
     private final ArrayStructure1D structure;
 
-    private ArrayStore1D(double[] array, ArrayStructure1D structure) {
+    public ArrayStore1D(double[] array, ArrayStructure1D structure) {
         super(array);
 
         this.structure = structure;
@@ -41,7 +43,7 @@ public class ArrayStore1D extends ArrayStore implements Store1D {
 
     @Override
     public double get(int index) {
-        return structure.get(array, index);
+        return array[structure.index(index)];
     }
 
     @Override
@@ -64,7 +66,7 @@ public class ArrayStore1D extends ArrayStore implements Store1D {
             return this;
         }
 
-        return this;
+        return new ArrayStore1D(toArray(), structure.compact());
     }
 
     @Override
@@ -81,58 +83,40 @@ public class ArrayStore1D extends ArrayStore implements Store1D {
         }
     }
 
-    public static class ArrayStore1DBuilder {
-        private final int length;
-        private int offset = 0;
-        private int stride = 1;
-
-        public ArrayStore1DBuilder(int length) {
-            this.length = length;
-        }
-
-        public ArrayStore1D build(double[] array) {
-            return new ArrayStore1D(array, new ArrayStructure1D(length, stride, offset));
-        }
-
-        public ArrayStore1DBuilder setStride(int stride) {
-            this.stride = stride;
-            return this;
-        }
-
-        public ArrayStore1DBuilder setOffset(int offset) {
-            this.offset = offset;
-            return this;
+    @Override
+    public Spliterator.OfDouble spliterator() {
+        if (structure.stride == 1) {
+            return Arrays.spliterator(array, structure.index(0), structure.index(size()));
+        } else {
+            return new StridedArrayStructureSpliterator(structure, array);
         }
     }
 
     public static class ArrayStructure1D extends ArrayStructure {
         final int stride;
+        final int length;
 
         public ArrayStructure1D(int length, int stride, int offset) {
             super(new int[]{length}, new int[]{stride}, offset);
             this.stride = stride;
+            this.length = length;
         }
 
         public ArrayStructure1D(int length) {
             this(length, 1, 0);
         }
 
-        @Override
-        Spliterator.OfDouble spliterator(double[] array) {
-            if (stride == 1) {
-                return Arrays.spliterator(array, offset, offset + size);
-            } else {
-                return new StridedArrayStructureSpliterator(array, stride);
-            }
-        }
-
-        public double get(double[] array, int index) {
-            return array[offset + index * stride];
+        public int index(int index) {
+            return offset + index * stride;
         }
 
         @Override
         public int dimension() {
             return 1;
+        }
+
+        public ArrayStructure1D compact() {
+            return new ArrayStructure1D(length);
         }
     }
 }

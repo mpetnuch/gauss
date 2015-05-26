@@ -21,7 +21,7 @@ package org.mpetnuch.gauss.matrix.dense;
 
 import org.mpetnuch.gauss.matrix.Matrix;
 import org.mpetnuch.gauss.matrix.Vector;
-import org.mpetnuch.gauss.store.ArrayStore1D;
+import org.mpetnuch.gauss.store.array.ArrayStore1D;
 
 import java.util.stream.DoubleStream;
 
@@ -75,5 +75,10 @@ public class DenseVector implements Vector  {
     @Override
     public void copyInto(double[] copy) {
         elementAccessor.copyInto(copy);
+    }
+
+    @Override
+    public void copyInto(double[] copy, int offset) {
+        elementAccessor.copyInto(copy, offset);
     }
 }

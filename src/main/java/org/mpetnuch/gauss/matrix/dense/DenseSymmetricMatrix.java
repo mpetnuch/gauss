@@ -20,7 +20,7 @@
 package org.mpetnuch.gauss.matrix.dense;
 
 import org.mpetnuch.gauss.matrix.SymmetricMatrix;
-import org.mpetnuch.gauss.store.ArrayStore2D;
+import org.mpetnuch.gauss.store.array.ArrayStore2D;
 
 /**
  * @author Michael Petnuch
@@ -29,12 +29,12 @@ import org.mpetnuch.gauss.store.ArrayStore2D;
 public class DenseSymmetricMatrix extends DenseMatrix implements SymmetricMatrix {
     private static final long serialVersionUID = -3530723819135774578L;
 
-    DenseSymmetricMatrix(ArrayStore2D elementStore) {
-        super(elementStore);
+    DenseSymmetricMatrix(ArrayStore2D store) {
+        super(store);
     }
 
     @Override
-    DenseMatrix create(ArrayStore2D elementStore) {
-        return new DenseSymmetricMatrix(elementStore);
+    DenseMatrix create(ArrayStore2D store) {
+        return new DenseSymmetricMatrix(store);
     }
 }
