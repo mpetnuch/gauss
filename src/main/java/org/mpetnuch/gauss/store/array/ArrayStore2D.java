@@ -116,7 +116,11 @@ public class ArrayStore2D extends ArrayStore<ArrayStore2D.ArrayStructure2D> impl
     }
 
     public ArrayStore2D compact() {
-        return new ArrayStore2D(toArray(), structure.compact());
+        if (structure.isCompact() && array.length == size()) {
+            return this;
+        } else {
+            return new ArrayStore2D(toArray(), structure.compact());
+        }
     }
 
     public void copyInto(double[] copy, int offset) {
@@ -194,7 +198,16 @@ public class ArrayStore2D extends ArrayStore<ArrayStore2D.ArrayStructure2D> impl
 
         @Override
         public ArrayStructure2D compact() {
-            return new RowMajorArrayStructure2D(rowCount, columnCount);
+            if (isCompact()) {
+                return this;
+            } else {
+                return new RowMajorArrayStructure2D(rowCount, columnCount);
+            }
+        }
+
+        @Override
+        public boolean isCompact() {
+            return offset == 0 && stride == columnCount;
         }
 
         @Override
@@ -239,7 +252,16 @@ public class ArrayStore2D extends ArrayStore<ArrayStore2D.ArrayStructure2D> impl
 
         @Override
         public ArrayStructure2D compact() {
-            return new ColumnMajorArrayStructure2D(rowCount, columnCount);
+            if (isCompact()) {
+                return this;
+            } else {
+                return new ColumnMajorArrayStructure2D(rowCount, columnCount);
+            }
+        }
+
+        @Override
+        public boolean isCompact() {
+            return offset == 0 && stride == rowCount;
         }
 
         @Override

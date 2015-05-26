@@ -50,12 +50,8 @@ public class ArrayStore1D extends ArrayStore<ArrayStore1D.ArrayStructure1D> impl
     }
 
     public ArrayStore1D compact() {
-        if (structure.isCompact()) {
+        if (structure.isCompact() && array.length == size()) {
             return this;
-        }
-
-        if (structure.index(0) == 0 && structure.stride == 1) {
-            return this; // already compact!
         } else {
             return new ArrayStore1D(toArray(), structure.compact());
         }
