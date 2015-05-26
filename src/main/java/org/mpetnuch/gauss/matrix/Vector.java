@@ -29,7 +29,7 @@ import java.util.stream.DoubleStream;
 public interface Vector extends Serializable {
     double get(int i);
 
-    int length();
+    int size();
 
     Matrix reshape(int rows, int columns);
 
@@ -46,10 +46,10 @@ public interface Vector extends Serializable {
     void copyInto(double[] copy);
 
     default Matrix toColumnMatrix() {
-        return reshape(length(), 1);
+        return reshape(size(), 1);
     }
 
     default Matrix toRowMatrix() {
-        return reshape(1, length());
+        return reshape(1, size());
     }
 }

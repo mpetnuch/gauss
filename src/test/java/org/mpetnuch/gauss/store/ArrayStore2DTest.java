@@ -64,14 +64,14 @@ public class ArrayStore2DTest {
         final Array2DRowRealMatrix aa = new Array2DRowRealMatrix(dataA.clone());
         final Array2DRowRealMatrix bb = new Array2DRowRealMatrix(dataB.clone());
 
-        IntStream.range(0, 10).mapToLong(value -> {
+        IntStream.range(0, 1000).mapToLong(value -> {
             final long t1 = System.currentTimeMillis();
             final DenseMatrix c = a.multiply(b);
             c.get(0, 0);
             return System.currentTimeMillis() - t1;
         }).average().ifPresent(System.out::println);
 
-        IntStream.range(0, 10).mapToLong(value -> {
+        IntStream.range(0, 1000).mapToLong(value -> {
             final long t1 = System.currentTimeMillis();
             final Array2DRowRealMatrix cc = aa.multiply(bb);
             cc.getEntry(0, 0);

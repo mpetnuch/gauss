@@ -20,6 +20,8 @@
 package org.mpetnuch.gauss.store.array;
 
 import org.mpetnuch.gauss.store.Store1D;
+import org.mpetnuch.gauss.store.array.ArrayStore2D.ArrayStructure2D;
+import org.mpetnuch.gauss.store.array.ArrayStore2D.RowMajorArrayStructure2D;
 
 import java.util.Arrays;
 import java.util.Spliterator;
@@ -52,33 +54,33 @@ public class ArrayStore1D extends ArrayStore implements Store1D {
     }
 
     public ArrayStore1D slice(int startIndex, int endIndex) {
-        return null;
+        return new ArrayStore1D(array, structure.slice(startIndex, endIndex));
     }
 
     @Override
     public ArrayStore2D reshape(int rowCount, int columnCount) {
-        return null;
+        return new ArrayStore2D(array, structure.reshape(rowCount, columnCount));
     }
 
     @Override
     public ArrayStore1D compact() {
-        if (structure.offset == 0 && structure.stride == 1) {
-            return this;
+        if (structure.index(0) == 0 && structure.stride == 1) {
+            return this; // already compact!
+        } else {
+            return new ArrayStore1D(toArray(), structure.compact());
         }
-
-        return new ArrayStore1D(toArray(), structure.compact());
     }
 
     @Override
     public void copyInto(double[] copy, int offset) {
         if (structure.stride == 1) {
-            System.arraycopy(array, structure.offset, copy, offset, structure.size);
+            System.arraycopy(array, structure.index(0), copy, offset, size());
             return;
         }
 
-        final int fence = structure.offset + structure.size * structure.stride;
+        final int fence = structure.index(size());
         // else we need to access the array in a strided fashion to copy into the requested array
-        for (int i = structure.offset, k = offset; i < fence; i += structure.stride) {
+        for (int i = structure.index(0), k = offset; i < fence; i += structure.stride) {
             copy[k++] = array[i];
         }
     }
@@ -117,6 +119,14 @@ public class ArrayStore1D extends ArrayStore implements Store1D {
 
         public ArrayStructure1D compact() {
             return new ArrayStructure1D(length);
+        }
+
+        public ArrayStructure2D reshape(int rowCount, int columnCount) {
+            return new RowMajorArrayStructure2D(rowCount, columnCount, stride, offset);
+        }
+
+        public ArrayStructure1D slice(int startIndex, int endIndex) {
+            return new ArrayStructure1D(endIndex - startIndex, stride, index(startIndex));
         }
     }
 }

@@ -19,7 +19,6 @@
 
 package org.mpetnuch.gauss.matrix.dense;
 
-import org.mpetnuch.gauss.matrix.Matrix;
 import org.mpetnuch.gauss.matrix.Vector;
 import org.mpetnuch.gauss.store.array.ArrayStore1D;
 
@@ -43,12 +42,12 @@ public class DenseVector implements Vector  {
     }
 
     @Override
-    public int length() {
+    public int size() {
         return elementAccessor.getStructure().size();
     }
 
     @Override
-    public Matrix reshape(int rowCount, int columnCount) {
+    public DenseMatrix reshape(int rowCount, int columnCount) {
         return new DenseGeneralMatrix(elementAccessor.reshape(rowCount, columnCount));
     }
 
