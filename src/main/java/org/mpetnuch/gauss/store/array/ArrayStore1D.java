@@ -64,7 +64,7 @@ public class ArrayStore1D extends ArrayStore<ArrayStore1D.ArrayStructure1D> impl
             return;
         }
 
-        final int fence = structure.index(size());
+        final int fence = structure.index(size() - 1) + 1;
         // else we need to access the array in a strided fashion to copy into the requested array
         for (int i = structure.index(0), k = offset; i < fence; i += structure.stride) {
             copy[k++] = array[i];
@@ -74,15 +74,15 @@ public class ArrayStore1D extends ArrayStore<ArrayStore1D.ArrayStructure1D> impl
     @Override
     public Spliterator.OfDouble spliterator() {
         if (structure.stride == 1) {
-            return Arrays.spliterator(array, structure.index(0), structure.index(size()));
+            return Arrays.spliterator(array, structure.index(0), structure.index(size() - 1) + 1);
         } else {
             return new StridedArrayStructureSpliterator(structure, array);
         }
     }
 
     public static class ArrayStructure1D extends ArrayStructure {
-        final int stride;
-        final int length;
+        private final int stride;
+        private final int length;
 
         public ArrayStructure1D(int length, int stride, int offset) {
             super(new int[]{length}, new int[]{stride}, offset);

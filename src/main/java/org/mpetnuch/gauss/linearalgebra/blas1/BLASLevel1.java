@@ -23,6 +23,5 @@ package org.mpetnuch.gauss.linearalgebra.blas1;
  * @author Michael Petnuch
  * @version $Id$
  */
-public interface BLASLevel1 { //<T extends FieldElement<T>, V extends FieldMatrix<T, V>> {
-//    void dscal(double alpha, V matrixA);
+public interface BLASLevel1 {
 }

@@ -23,7 +23,7 @@ package org.mpetnuch.gauss.linearalgebra.blas2;
  * @author Michael Petnuch
  * @version $Id$
  */
-public interface BLASLevel2 { //<T extends FieldElement<T>, M extends FieldMatrix<T, V>, V extends FieldMatrix<T, V>> {
+public interface BLASLevel2 {
 
 
 }

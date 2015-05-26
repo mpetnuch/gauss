@@ -220,9 +220,9 @@ public class ArrayStore2D extends ArrayStore<ArrayStore2D.ArrayStructure2D> impl
                                       int columnStartInclusive, int columnEndExclusive) {
             final int rowCount = rowEndExclusive - rowStartInclusive;
             final int columnCount = columnEndExclusive - columnStartInclusive;
-            final int sliceOffset = stride * rowStartInclusive + columnStartInclusive;
+            final int sliceOffset = offset + stride * rowStartInclusive + columnStartInclusive;
 
-            return new RowMajorArrayStructure2D(rowCount, columnCount, stride, offset + sliceOffset);
+            return new RowMajorArrayStructure2D(rowCount, columnCount, stride, sliceOffset);
         }
 
         @Override
@@ -274,9 +274,9 @@ public class ArrayStore2D extends ArrayStore<ArrayStore2D.ArrayStructure2D> impl
                                       int columnStartInclusive, int columnEndExclusive) {
             final int rowCount = rowEndExclusive - rowStartInclusive;
             final int columnCount = columnEndExclusive - columnStartInclusive;
-            final int sliceOffset = stride * columnStartInclusive + rowStartInclusive;
+            final int sliceOffset = offset + stride * columnStartInclusive + rowStartInclusive;
 
-            return new ColumnMajorArrayStructure2D(rowCount, columnCount, stride, offset + sliceOffset);
+            return new ColumnMajorArrayStructure2D(rowCount, columnCount, stride, sliceOffset);
         }
 
         @Override

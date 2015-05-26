@@ -108,7 +108,7 @@ public abstract class DenseMatrix implements Matrix {
     abstract DenseMatrix create(ArrayStore2D elementAccessor);
 
     public DenseMatrix multiply(DenseMatrix that) {
-        final int M = getNumberOfRows(), N = getNumberOfColumns();
+        final int M = this.getNumberOfRows(), N = that.getNumberOfColumns();
         final DenseMatrixBuilder resultBuilder = new DenseMatrixBuilder(M, N);
 
         blasLevel3.dgemm(1.0, this, that, 0.0, resultBuilder);
