@@ -26,7 +26,7 @@ import java.text.MessageFormat;
  */
 public class InvalidRangeException extends IllegalArgumentException {
     private static final long serialVersionUID = -8798552081345525331L;
-    
+
     private final Number argument;
     private final Number lowerBound, upperBound;
 

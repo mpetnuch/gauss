@@ -19,13 +19,13 @@
 
 package org.mpetnuch.gauss.store.array;
 
+import org.mpetnuch.gauss.store.StoreAnyD;
+
 import java.util.Objects;
 import java.util.PrimitiveIterator;
 import java.util.Spliterators;
 import java.util.stream.DoubleStream;
 import java.util.stream.StreamSupport;
-
-import org.mpetnuch.gauss.store.StoreAnyD;
 
 /**
  * @author Michael Petnuch
@@ -64,7 +64,7 @@ public abstract class ArrayStore<Structure extends ArrayStructure> implements St
     }
 
     public boolean isCompact() {
-        return array.length == size() && structure.isCompact();
+        return array.length == size() && structure.isContiguous();
     }
 
     @Override
