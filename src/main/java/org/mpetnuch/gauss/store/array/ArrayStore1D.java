@@ -19,11 +19,13 @@
 
 package org.mpetnuch.gauss.store.array;
 
+import org.mpetnuch.gauss.exception.InvalidRangeException;
 import org.mpetnuch.gauss.store.Store1D;
 import org.mpetnuch.gauss.store.array.ArrayStore2D.ArrayStructure2D;
 import org.mpetnuch.gauss.store.array.ArrayStore2D.RowMajorArrayStructure2D;
+import org.mpetnuch.gauss.store.array.ArrayStructureSpliterator.ArrayStructure1DWithNonUnitStride;
+import org.mpetnuch.gauss.store.array.ArrayStructureSpliterator.ContiguousArrayStructureWithUnitStrideDimension;
 
-import java.util.Arrays;
 import java.util.Spliterator;
 
 /**
@@ -50,7 +52,7 @@ public class ArrayStore1D extends ArrayStore<ArrayStore1D.ArrayStructure1D> impl
     }
 
     public ArrayStore1D compact() {
-        if (structure.isCompact() && array.length == size()) {
+        if (structure.isContiguous() && array.length == size()) {
             return this;
         } else {
             return new ArrayStore1D(toArray(), structure.compact());
@@ -73,34 +75,116 @@ public class ArrayStore1D extends ArrayStore<ArrayStore1D.ArrayStructure1D> impl
 
     @Override
     public Spliterator.OfDouble spliterator() {
-        if (structure.stride == 1) {
-            return Arrays.spliterator(array, structure.index(0), structure.index(size() - 1) + 1);
+        if (structure.hasUnitStrideDimension()) {
+            return new ContiguousArrayStructureWithUnitStrideDimension(structure, array);
         } else {
-            return new StridedArrayStructureSpliterator(structure, array);
+            return new ArrayStructure1DWithNonUnitStride(structure, array);
         }
     }
 
-    public static class ArrayStructure1D extends ArrayStructure {
+    public static class ArrayStructure1D implements ArrayStructure {
         private final int stride;
         private final int length;
+        private final int offset;
 
         public ArrayStructure1D(int length, int stride, int offset) {
-            super(new int[]{length}, new int[]{stride}, offset);
             this.stride = stride;
             this.length = length;
+            this.offset = offset;
         }
 
         public ArrayStructure1D(int length) {
             this(length, 1, 0);
         }
 
+        @Override
+        public int index(int... indicies) {
+            if (indicies.length != 1) {
+                throw new IllegalArgumentException();
+            }
+
+            return index(indicies[0]);
+        }
+
+        @Override
+        public int[] indicies(int ordinal) {
+            if (ordinal >= length) {
+                throw new InvalidRangeException(ordinal, 0, ordinal - 1);
+            }
+
+            return new int[]{ordinal};
+        }
+
+        @Override
+        public int ordinal(int... indicies) {
+            if (indicies.length != 1) {
+                throw new IllegalArgumentException();
+            }
+
+            return indicies[0];
+        }
+
+        @Override
         public int index(int index) {
             return offset + index * stride;
         }
 
         @Override
+        public int lastIndex() {
+            return offset + (length - 1) * stride;
+        }
+
+        @Override
         public int dimension() {
             return 1;
+        }
+
+        @Override
+        public int offset() {
+            return offset;
+        }
+
+        @Override
+        public int stride(int dimension) {
+            return stride;
+        }
+
+        @Override
+        public int backstride(int dimension) {
+            if (dimension != 0) {
+                throw new InvalidRangeException(dimension, 0, 0);
+            }
+
+            return (length - 1) * stride;
+        }
+
+        @Override
+        public boolean isContiguous() {
+            return stride == 1;
+        }
+
+        @Override
+        public boolean hasUnitStrideDimension() {
+            return stride == 1;
+        }
+
+        @Override
+        public int unitStrideDimension() {
+            return stride == 1 ? 0 : ArrayStructure.NO_UNIT_STRIDE_DIMENSION;
+        }
+
+        @Override
+        public int dimensionLength(int dimension) {
+            if (dimension != 0) {
+                throw new InvalidRangeException(dimension, 0, 0);
+            }
+
+            return length;
+        }
+
+        @Override
+        public int size() {
+            return length;
         }
 
         public ArrayStructure1D compact() {

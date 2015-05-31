@@ -122,12 +122,12 @@ public abstract class DenseMatrix implements Matrix {
 
     @Override
     public int getNumberOfRows() {
-        return store.structure().getRowCount();
+        return store.structure().rowCount();
     }
 
     @Override
     public int getNumberOfColumns() {
-        return store.structure().getColumnCount();
+        return store.structure().columnCount();
     }
 
     @Override

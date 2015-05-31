@@ -39,7 +39,7 @@ public abstract class ArrayStore<Structure extends ArrayStructure> implements St
         Objects.requireNonNull(array, "Array cannot be null");
         Objects.requireNonNull(structure, "Structure cannot be null");
 
-        if (structure.size > array.length) {
+        if (structure.size() > array.length) {
             throw new IllegalArgumentException("Structure is not compatible with array size");
         }
 
@@ -75,7 +75,7 @@ public abstract class ArrayStore<Structure extends ArrayStructure> implements St
 
     @Override
     public double get(int... indices) {
-        if (structure().dimension() != indices.length) {
+        if (structure.dimension() != indices.length) {
             throw new IllegalArgumentException();
         }
 

@@ -94,7 +94,7 @@ public class JBLASLevel3 implements BLASLevel3<DenseMatrix, DenseTriangularMatri
         private final DenseMatrixBuilder c;
         private final double alpha;
         private final int M, N, P;
-        private final int largestDimension, leafDimension;
+        private final int largestDimension, crossoverDimension;
 
         private GeneralMatrixMultiply(int crossoverDimension, double alpha, DenseMatrix a, DenseMatrix b, DenseMatrixBuilder c) {
             this.alpha = alpha;
@@ -108,10 +108,45 @@ public class JBLASLevel3 implements BLASLevel3<DenseMatrix, DenseTriangularMatri
 
             this.c = c;
             this.largestDimension = Math.max(M, Math.max(P, N));
-            this.leafDimension = crossoverDimension;
+            this.crossoverDimension = crossoverDimension;
         }
 
-        private static void computeDirectly(double alpha,
+        @Override
+        protected void compute() {
+            if (largestDimension <= crossoverDimension) {
+                computeDirectly(alpha, a, b, c);
+            } else if (M >= Math.max(P, N)) {
+                final int m = M / 2;
+                invokeAll(
+                        new GeneralMatrixMultiply(crossoverDimension, alpha, a.slice(0, m, 0, P), b, c.slice(0, m, 0, N)),
+                        new GeneralMatrixMultiply(crossoverDimension, alpha, a.slice(m, M, 0, P), b, c.slice(m, M, 0, N))
+                );
+            } else if (N >= Math.max(M, P)) {
+                final int n = N / 2;
+                invokeAll(
+                        new GeneralMatrixMultiply(crossoverDimension, alpha, a, b.slice(0, P, 0, n), c.slice(0, M, 0, n)),
+                        new GeneralMatrixMultiply(crossoverDimension, alpha, a, b.slice(0, P, n, N), c.slice(0, M, n, N))
+                );
+            } else if (P >= Math.max(M, N)) {
+                final int p = P / 2;
+                new GeneralMatrixMultiply(crossoverDimension, alpha, a.slice(0, M, 0, p), b.slice(0, p, 0, N), c).invoke();
+                new GeneralMatrixMultiply(crossoverDimension, alpha, a.slice(0, M, p, P), b.slice(p, P, 0, N), c).invoke();
+            }
+        }
+
+        private void computeDirectly(double alpha, DenseMatrix a, DenseMatrix b, DenseMatrixBuilder c) {
+            final int m = M / 2, p = P / 2, n = N / 2;
+            // todo special logic for smaller matrices
+            computeDirectly(
+                    alpha,
+                    a.slice(0, m, 0, p).compact(), a.slice(0, m, p, P).compact(),
+                    a.slice(m, M, 0, p).compact(), a.slice(m, M, p, P).compact(),
+                    b.slice(0, p, 0, n), b.slice(0, p, n, N), b.slice(p, P, 0, n), b.slice(p, P, n, N),
+                    c.slice(0, m, 0, n), c.slice(0, m, n, N), c.slice(m, M, 0, n), c.slice(m, M, n, N)
+            );
+        }
+
+        private void computeDirectly(double alpha,
                                             DenseMatrix a11, DenseMatrix a12, DenseMatrix a21, DenseMatrix a22,
                                             DenseMatrix b11, DenseMatrix b12, DenseMatrix b21, DenseMatrix b22,
                                             DenseMatrixBuilder c11, DenseMatrixBuilder c12,
@@ -202,33 +237,33 @@ public class JBLASLevel3 implements BLASLevel3<DenseMatrix, DenseTriangularMatri
             }
         }
 
-        @Override
-        protected void compute() {
-            if (largestDimension <= leafDimension) {
-                final int m = M / 2, p = P / 2, n = N / 2;
-                computeDirectly(
-                        alpha,
-                        a.slice(0, m, 0, p).compact(), a.slice(0, m, p, P).compact(),
-                        a.slice(m, M, 0, p).compact(), a.slice(m, M, p, P).compact(),
-                        b.slice(0, p, 0, n), b.slice(0, p, n, N), b.slice(p, P, 0, n), b.slice(p, P, n, N),
-                        c.slice(0, m, 0, n), c.slice(0, m, n, N), c.slice(m, M, 0, n), c.slice(m, M, n, N)
-                );
-            } else if (M >= Math.max(P, N)) {
-                final int m = M / 2;
-                invokeAll(
-                        new GeneralMatrixMultiply(leafDimension, alpha, a.slice(0, m, 0, P), b, c.slice(0, m, 0, N)),
-                        new GeneralMatrixMultiply(leafDimension, alpha, a.slice(m, M, 0, P), b, c.slice(m, M, 0, N))
-                );
-            } else if (N >= Math.max(M, P)) {
-                final int n = N / 2;
-                invokeAll(
-                        new GeneralMatrixMultiply(leafDimension, alpha, a, b.slice(0, P, 0, n), c.slice(0, M, 0, n)),
-                        new GeneralMatrixMultiply(leafDimension, alpha, a, b.slice(0, P, n, N), c.slice(0, M, n, N))
-                );
-            } else if (P >= Math.max(M, N)) {
-                final int p = P / 2;
-                new GeneralMatrixMultiply(leafDimension, alpha, a.slice(0, M, 0, p), b.slice(0, p, 0, N), c).invoke();
-                new GeneralMatrixMultiply(leafDimension, alpha, a.slice(0, M, p, P), b.slice(p, P, 0, N), c).invoke();
+        private void computeDirectly8(double alpha, DenseMatrix a, DenseMatrix b, DenseMatrixBuilder c) {
+            for (int i = 0; i < M; i++) {
+
+                for (int j = 0; j < N; j += 8) {
+                    double c_i0 = 0, c_i1 = 0, c_i2 = 0, c_i3 = 0, c_i4 = 0, c_i5 = 0, c_i6 = 0, c_i7 = 0;
+
+                    for (int k = 0; k < P; k++) {
+                        double a_ik = a.get(i, k);
+                        c_i0 += a_ik * b.get(k, j);
+                        c_i1 += a_ik * b.get(k, j + 1);
+                        c_i2 += a_ik * b.get(k, j + 2);
+                        c_i3 += a_ik * b.get(k, j + 3);
+                        c_i4 += a_ik * b.get(k, j + 4);
+                        c_i5 += a_ik * b.get(k, j + 5);
+                        c_i6 += a_ik * b.get(k, j + 6);
+                        c_i7 += a_ik * b.get(k, j + 7);
+                    }
+
+                    c.add(i, j, alpha * c_i0);
+                    c.add(i, j + 1, alpha * c_i1);
+                    c.add(i, j + 2, alpha * c_i2);
+                    c.add(i, j + 3, alpha * c_i3);
+                    c.add(i, j + 4, alpha * c_i4);
+                    c.add(i, j + 5, alpha * c_i5);
+                    c.add(i, j + 6, alpha * c_i6);
+                    c.add(i, j + 7, alpha * c_i7);
+                }
             }
         }
     }
@@ -241,9 +276,9 @@ public class JBLASLevel3 implements BLASLevel3<DenseMatrix, DenseTriangularMatri
         private final DenseMatrixBuilder c;
         private final double alpha;
         private final int N, P;
-        private final int leafDimension;
+        private final int crossoverDimension;
 
-        private TriangularMatrixMultiply(int leafDimension, double alpha, DenseTriangularMatrix a, DenseMatrix b, DenseMatrixBuilder c) {
+        private TriangularMatrixMultiply(int crossoverDimension, double alpha, DenseTriangularMatrix a, DenseMatrix b, DenseMatrixBuilder c) {
             this.alpha = alpha;
 
             this.a = a;
@@ -253,7 +288,7 @@ public class JBLASLevel3 implements BLASLevel3<DenseMatrix, DenseTriangularMatri
             this.P = b.getNumberOfColumns();
 
             this.c = c;
-            this.leafDimension = leafDimension;
+            this.crossoverDimension = crossoverDimension;
         }
 
         private static void computeDirectly(double alpha, DenseTriangularMatrix a, DenseMatrix b, DenseMatrixBuilder c) {
@@ -276,24 +311,24 @@ public class JBLASLevel3 implements BLASLevel3<DenseMatrix, DenseTriangularMatri
 
         @Override
         protected void compute() {
-            if (N <= leafDimension) {
+            if (N <= crossoverDimension) {
                 computeDirectly(alpha, a, b, c);
             } else if (TriangularMatrixType.UpperTriangular == a.getTriangularMatrixType()) {
                 final int n = (N + 1) / 2;
                 invokeAll(
-                        new TriangularMatrixMultiply(leafDimension, alpha, a.triangularSlice(0, n), b.slice(0, n, 0, P), c.slice(0, n, 0, P)),
-                        new TriangularMatrixMultiply(leafDimension, alpha, a.triangularSlice(n, N), b.slice(n, N, 0, P), c.slice(n, N, 0, P))
+                        new TriangularMatrixMultiply(crossoverDimension, alpha, a.triangularSlice(0, n), b.slice(0, n, 0, P), c.slice(0, n, 0, P)),
+                        new TriangularMatrixMultiply(crossoverDimension, alpha, a.triangularSlice(n, N), b.slice(n, N, 0, P), c.slice(n, N, 0, P))
                 );
 
-                new GeneralMatrixMultiply(leafDimension, alpha, a.slice(0, n, n, N), b.slice(n, N, 0, P), c.slice(0, n, 0, P)).invoke();
+                new GeneralMatrixMultiply(crossoverDimension, alpha, a.slice(0, n, n, N), b.slice(n, N, 0, P), c.slice(0, n, 0, P)).invoke();
             } else {
                 final int n = (N + 1) / 2;
                 invokeAll(
-                        new TriangularMatrixMultiply(leafDimension, alpha, a.triangularSlice(0, n), b.slice(0, n, 0, P), c.slice(0, n, 0, P)),
-                        new TriangularMatrixMultiply(leafDimension, alpha, a.triangularSlice(n, N), b.slice(n, N, 0, P), c.slice(n, N, 0, P))
+                        new TriangularMatrixMultiply(crossoverDimension, alpha, a.triangularSlice(0, n), b.slice(0, n, 0, P), c.slice(0, n, 0, P)),
+                        new TriangularMatrixMultiply(crossoverDimension, alpha, a.triangularSlice(n, N), b.slice(n, N, 0, P), c.slice(n, N, 0, P))
                 );
 
-                new GeneralMatrixMultiply(leafDimension, alpha, a.slice(0, n, n, N), b.slice(n, N, 0, P), c.slice(0, n, 0, P)).invoke();
+                new GeneralMatrixMultiply(crossoverDimension, alpha, a.slice(0, n, n, N), b.slice(n, N, 0, P), c.slice(0, n, 0, P)).invoke();
             }
         }
     }

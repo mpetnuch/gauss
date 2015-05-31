@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2015, Michael Petnuch. All Rights Reserved.
  *
- * This file `ArrayStructure.java` is part of Gauss.
+ * This file `InvalidRangeException.java` is part of Gauss.
  *
  * Gauss is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,37 +17,27 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.mpetnuch.gauss.store.array;
+package org.mpetnuch.gauss.exception;
 
-import org.mpetnuch.gauss.store.Structure;
+import java.text.MessageFormat;
 
 /**
  * @author Michael Petnuch
  */
-public interface ArrayStructure extends Structure {
-    int NO_UNIT_STRIDE_DIMENSION = 1;
+public class InvalidRangeException extends IllegalArgumentException {
+    private static final long serialVersionUID = -8798552081345525331L;
+    
+    private final Number argument;
+    private final Number lowerBound, upperBound;
 
-    int lastIndex();
+    public InvalidRangeException(Number argument, Number lowerBound, Number upperBound) {
+        this.argument = argument;
+        this.upperBound = upperBound;
+        this.lowerBound = lowerBound;
+    }
 
-    int index(int ordinal);
-
-    int index(int... indicies);
-
-    int[] indicies(int ordinal);
-
-    int ordinal(int... indicies);
-
-    int offset();
-
-    int stride(int dimension);
-
-    int backstride(int dimension);
-
-    boolean isContiguous();
-
-    int unitStrideDimension();
-
-    default boolean hasUnitStrideDimension() {
-        return NO_UNIT_STRIDE_DIMENSION != unitStrideDimension();
+    @Override
+    public String getMessage() {
+        return MessageFormat.format("{0} out of [{1}, {2}] range", argument, upperBound, lowerBound);
     }
 }

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2015, Michael Petnuch. All Rights Reserved.
  *
- * This file `ArrayStructure.java` is part of Gauss.
+ * This file `ArrayStructureTest.java` is part of Gauss.
  *
  * Gauss is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,35 +19,28 @@
 
 package org.mpetnuch.gauss.store.array;
 
-import org.mpetnuch.gauss.store.Structure;
+import org.junit.Test;
+
+import java.util.Arrays;
 
 /**
  * @author Michael Petnuch
  */
-public interface ArrayStructure extends Structure {
-    int NO_UNIT_STRIDE_DIMENSION = 1;
+public class ArrayStructureTest {
+    @Test
+    public void testStructure() {
+        final int dimensions[] = new int[]{5, 7};
+        final int strides[] = new int[]{1, 7};
+        ArrayStructure structure = new ArrayStoreAnyD.ArrayStructureAnyD(
+                dimensions,
+                strides,
+                0
+        );
 
-    int lastIndex();
-
-    int index(int ordinal);
-
-    int index(int... indicies);
-
-    int[] indicies(int ordinal);
-
-    int ordinal(int... indicies);
-
-    int offset();
-
-    int stride(int dimension);
-
-    int backstride(int dimension);
-
-    boolean isContiguous();
-
-    int unitStrideDimension();
-
-    default boolean hasUnitStrideDimension() {
-        return NO_UNIT_STRIDE_DIMENSION != unitStrideDimension();
+        for (int i = 0; i < 35; i++) {
+            int[] tuple = structure.indicies(i);
+            int k = structure.ordinal(tuple);
+            System.out.println(String.format("%d -> %s -> %d", i, Arrays.toString(tuple), k));
+        }
     }
 }
