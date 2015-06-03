@@ -56,11 +56,7 @@ public abstract class ArrayStructureSpliterator<Structure extends ArrayStructure
         int i;
         if ((i = index) >= 0 && i < (index = fence)) {
             do {
-                try {
-                    action.accept(array[arrayIndex]);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                action.accept(array[arrayIndex]);
                 arrayIndex = nextArrayIndex(arrayIndex);
             } while (++i < fence);
         }
