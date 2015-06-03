@@ -139,8 +139,7 @@ public class JBLASLevel3 implements BLASLevel3<DenseMatrix, DenseTriangularMatri
             // todo special logic for smaller matrices
             computeDirectly(
                     alpha,
-                    a.slice(0, m, 0, p).compact(), a.slice(0, m, p, P).compact(),
-                    a.slice(m, M, 0, p).compact(), a.slice(m, M, p, P).compact(),
+                    a.slice(0, m, 0, p), a.slice(0, m, p, P), a.slice(m, M, 0, p), a.slice(m, M, p, P),
                     b.slice(0, p, 0, n), b.slice(0, p, n, N), b.slice(p, P, 0, n), b.slice(p, P, n, N),
                     c.slice(0, m, 0, n), c.slice(0, m, n, N), c.slice(m, M, 0, n), c.slice(m, M, n, N)
             );

@@ -22,9 +22,7 @@ package org.mpetnuch.gauss.store.array;
 import org.mpetnuch.gauss.exception.InvalidRangeException;
 import org.mpetnuch.gauss.store.Store1D;
 import org.mpetnuch.gauss.store.array.ArrayStore2D.ArrayStructure2D;
-import org.mpetnuch.gauss.store.array.ArrayStore2D.RowMajorArrayStructure2D;
-import org.mpetnuch.gauss.store.array.ArrayStructureSpliterator.ArrayStructure1DWithNonUnitStride;
-import org.mpetnuch.gauss.store.array.ArrayStructureSpliterator.ContiguousArrayStructureWithUnitStrideDimension;
+import org.mpetnuch.gauss.store.array.ArrayStructureSpliterator.ContiguousStructureUnitStrideDimensionSpliterator;
 
 import java.util.Spliterator;
 
@@ -54,14 +52,16 @@ public class ArrayStore1D extends ArrayStore<ArrayStore1D.ArrayStructure1D> impl
     public ArrayStore1D compact() {
         if (structure.isContiguous() && array.length == size()) {
             return this;
-        } else {
-            return new ArrayStore1D(toArray(), structure.compact());
         }
+
+        final ArrayStructure1D compactStructure = new ArrayStructure1D(size());
+        final double[] compactArray = toArray();
+
+        return new ArrayStore1D(compactArray, compactStructure);
     }
 
-    @Override
     public void copyInto(double[] copy, int offset) {
-        if (structure.stride == 1) {
+        if (structure.isContiguous()) {
             System.arraycopy(array, structure.index(0), copy, offset, size());
             return;
         }
@@ -73,10 +73,20 @@ public class ArrayStore1D extends ArrayStore<ArrayStore1D.ArrayStructure1D> impl
         }
     }
 
+    public void copyInto(double[] copy) {
+        copyInto(copy, 0);
+    }
+
+    public double[] toArray() {
+        final double[] copy = new double[size()];
+        copyInto(copy);
+        return copy;
+    }
+
     @Override
     public Spliterator.OfDouble spliterator() {
         if (structure.hasUnitStrideDimension()) {
-            return new ContiguousArrayStructureWithUnitStrideDimension(structure, array);
+            return new ContiguousStructureUnitStrideDimensionSpliterator(structure, array);
         } else {
             return new ArrayStructure1DWithNonUnitStride(structure, array);
         }
@@ -98,16 +108,16 @@ public class ArrayStore1D extends ArrayStore<ArrayStore1D.ArrayStructure1D> impl
         }
 
         @Override
-        public int index(int... indicies) {
-            if (indicies.length != 1) {
+        public int index(int... indices) {
+            if (indices.length != 1) {
                 throw new IllegalArgumentException();
             }
 
-            return index(indicies[0]);
+            return index(indices[0]);
         }
 
         @Override
-        public int[] indicies(int ordinal) {
+        public int[] indices(int ordinal) {
             if (ordinal >= length) {
                 throw new InvalidRangeException(ordinal, 0, ordinal - 1);
             }
@@ -116,12 +126,12 @@ public class ArrayStore1D extends ArrayStore<ArrayStore1D.ArrayStructure1D> impl
         }
 
         @Override
-        public int ordinal(int... indicies) {
-            if (indicies.length != 1) {
+        public int ordinal(int... indices) {
+            if (indices.length != 1) {
                 throw new IllegalArgumentException();
             }
 
-            return indicies[0];
+            return indices[0];
         }
 
         @Override
@@ -187,16 +197,40 @@ public class ArrayStore1D extends ArrayStore<ArrayStore1D.ArrayStructure1D> impl
             return length;
         }
 
-        public ArrayStructure1D compact() {
-            return new ArrayStructure1D(length);
-        }
-
         public ArrayStructure2D reshape(int rowCount, int columnCount) {
-            return new RowMajorArrayStructure2D(rowCount, columnCount, stride, offset);
+            return new ArrayStructure2D(rowCount, stride, columnCount, 1, offset);
         }
 
         public ArrayStructure1D slice(int startInclusive, int endExclusive) {
             return new ArrayStructure1D(endExclusive - startInclusive, stride, index(startInclusive));
+        }
+    }
+
+    public static final class ArrayStructure1DWithNonUnitStride extends ArrayStructureSpliterator<ArrayStructure1D> {
+        private final int stride = structure.stride(0);
+
+        private ArrayStructure1DWithNonUnitStride(ArrayStructure1D structure, double[] array, int index, int fence) {
+            super(structure, array, index, fence);
+        }
+
+        public ArrayStructure1DWithNonUnitStride(ArrayStructure1D structure, double[] array) {
+            super(structure, array);
+        }
+
+        @Override
+        public OfDouble trySplit() {
+            final int lo = index, mid = (lo + fence) >>> 1;
+            if (lo < mid) {
+                return new ArrayStructure1DWithNonUnitStride(structure, array, lo, mid);
+            } else {
+                // can't split any more
+                return null;
+            }
+        }
+
+        @Override
+        int nextArrayIndex(int currentArrayIndex) {
+            return currentArrayIndex + stride;
         }
     }
 }

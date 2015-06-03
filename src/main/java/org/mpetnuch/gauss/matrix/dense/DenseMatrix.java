@@ -28,7 +28,6 @@ import org.mpetnuch.gauss.matrix.TriangularMatrixType;
 import org.mpetnuch.gauss.store.array.ArrayStore1D;
 import org.mpetnuch.gauss.store.array.ArrayStore2D;
 import org.mpetnuch.gauss.store.array.ArrayStore2D.ArrayStructure2D;
-import org.mpetnuch.gauss.store.array.ArrayStore2D.RowMajorArrayStructure2D;
 
 /**
  * @author Michael Petnuch
@@ -54,7 +53,7 @@ public abstract class DenseMatrix implements Matrix {
             }
         }
 
-        final ArrayStructure2D structure = new RowMajorArrayStructure2D(rowCount, columnCount);
+        final ArrayStructure2D structure = new ArrayStructure2D(rowCount, columnCount);
         if (rowCount != columnCount) {
             double[] flattenedArray = new double[rowCount * columnCount];
             for (int index = 0, rowIndex = 0; rowIndex < rowCount; rowIndex++, index += columnCount) {
@@ -157,11 +156,7 @@ public abstract class DenseMatrix implements Matrix {
 
     @Override
     public DenseMatrix compact() {
-        if(store.isCompact()) {
-            return this;
-        } else {
-            return create(store.compact());
-        }
+        return create(store.compact());
     }
 
     public void setBlasLevel3(BLASLevel3<DenseMatrix, DenseTriangularMatrix, DenseSymmetricMatrix, DenseMatrixBuilder> blasLevel3) {

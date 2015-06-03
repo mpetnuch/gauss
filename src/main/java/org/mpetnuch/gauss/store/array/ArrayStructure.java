@@ -31,11 +31,11 @@ public interface ArrayStructure extends Structure {
 
     int index(int ordinal);
 
-    int index(int... indicies);
+    int index(int... indices);
 
-    int[] indicies(int ordinal);
+    int[] indices(int ordinal);
 
-    int ordinal(int... indicies);
+    int ordinal(int... indices);
 
     int offset();
 

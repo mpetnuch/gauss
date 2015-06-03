@@ -26,9 +26,9 @@ package org.mpetnuch.gauss.store;
 public interface Store2D extends Store {
     double get(int rowIndex, int columnIndex);
 
-    int getRowCount();
+    int rowCount();
 
-    int getColumnCount();
+    int columnCount();
 
     Store2D transpose();
 

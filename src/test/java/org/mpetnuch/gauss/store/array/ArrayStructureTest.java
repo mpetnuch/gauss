@@ -28,6 +28,21 @@ import java.util.Arrays;
  */
 public class ArrayStructureTest {
     @Test
+    public void testMe() {
+        final double[] array = new double[]{1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0};
+        final ArrayStore2D.ArrayStructure2D structure =
+                new ArrayStore2D.ArrayStructure2D(3, 3).transpose();
+
+        final ArrayStore2D store = new ArrayStore2D(array, structure);
+//        store.stream().forEach(System.out::println);
+
+        ArrayStore2D sliced = store.slice(0, 2, 0, 3);
+//        sliced.stream().forEach(System.out::println);
+//        System.out.println(Arrays.toString(sliced.toArray()));
+
+    }
+
+    @Test
     public void testStructure() {
         final int dimensions[] = new int[]{5, 7};
         final int strides[] = new int[]{1, 7};
@@ -38,7 +53,7 @@ public class ArrayStructureTest {
         );
 
         for (int i = 0; i < 35; i++) {
-            int[] tuple = structure.indicies(i);
+            int[] tuple = structure.indices(i);
             int k = structure.ordinal(tuple);
             System.out.println(String.format("%d -> %s -> %d", i, Arrays.toString(tuple), k));
         }

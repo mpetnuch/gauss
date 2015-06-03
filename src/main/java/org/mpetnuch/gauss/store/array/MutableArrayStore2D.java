@@ -33,7 +33,7 @@ public class MutableArrayStore2D extends ArrayStore2D {
     }
 
     public MutableArrayStore2D(int rowCount, int columnCount) {
-        super(new double[rowCount * columnCount], new RowMajorArrayStructure2D(rowCount, columnCount));
+        super(new double[rowCount * columnCount], new ArrayStructure2D(rowCount, columnCount));
     }
 
     public MutableArrayStore2D(double[] array, ArrayStructure2D structure) {

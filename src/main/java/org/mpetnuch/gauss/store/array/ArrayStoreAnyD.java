@@ -19,10 +19,9 @@
 
 package org.mpetnuch.gauss.store.array;
 
-import org.mpetnuch.gauss.store.array.ArrayStructureSpliterator.GeneralArrayStructureSpliterator;
+import org.mpetnuch.gauss.store.array.ArrayStructureSpliterator.NaturalOrderSpliterator;
 
 import java.util.Arrays;
-import java.util.PrimitiveIterator;
 import java.util.Spliterator;
 import java.util.stream.IntStream;
 
@@ -36,16 +35,8 @@ public class ArrayStoreAnyD extends ArrayStore<ArrayStoreAnyD.ArrayStructureAnyD
     }
 
     @Override
-    public void copyInto(double[] copy, int offset) {
-        final PrimitiveIterator.OfDouble spliterator = iterator();
-        while (spliterator.hasNext()) {
-            copy[offset++] = spliterator.nextDouble();
-        }
-    }
-
-    @Override
     public Spliterator.OfDouble spliterator() {
-        return new GeneralArrayStructureSpliterator(structure, array);
+        return new NaturalOrderSpliterator(structure, array);
     }
 
     public static class ArrayStructureAnyD implements ArrayStructure {
@@ -116,25 +107,25 @@ public class ArrayStoreAnyD extends ArrayStore<ArrayStoreAnyD.ArrayStructureAnyD
             return lastIndex;
         }
 
-        public int[] indicies(int ordinal) {
-            final int[] indicies = new int[dimension];
+        public int[] indices(int ordinal) {
+            final int[] indices = new int[dimension];
 
-            indicies[0] = ordinal;
+            indices[0] = ordinal;
             for (int i = 1; i < dimension; i++) {
-                indicies[i] = indicies[i - 1] % factors[i - 1];
+                indices[i] = indices[i - 1] % factors[i - 1];
             }
 
             for (int i = 0; i < dimension; i++) {
-                indicies[i] = Math.floorDiv(indicies[i], factors[i]);
+                indices[i] = Math.floorDiv(indices[i], factors[i]);
             }
 
-            return indicies;
+            return indices;
         }
 
         @Override
-        public int ordinal(int[] indicies) {
+        public int ordinal(int[] indices) {
             return IntStream.range(0, dimension).
-                    reduce(0, (sum, i) -> sum + indicies[i] * factors[i]);
+                    reduce(0, (sum, i) -> sum + indices[i] * factors[i]);
         }
 
         @Override

@@ -21,6 +21,7 @@ package org.mpetnuch.gauss.store;
 
 import java.util.PrimitiveIterator;
 import java.util.Spliterator;
+import java.util.function.DoubleConsumer;
 import java.util.stream.DoubleStream;
 
 /**
@@ -39,4 +40,8 @@ public interface Store extends Iterable<Double> {
     int size();
 
     Structure structure();
+
+    default void forEach(DoubleConsumer action) {
+        stream().forEach(action);
+    }
 }

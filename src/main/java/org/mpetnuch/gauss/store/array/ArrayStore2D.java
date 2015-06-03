@@ -22,11 +22,9 @@ package org.mpetnuch.gauss.store.array;
 import org.mpetnuch.gauss.exception.InvalidRangeException;
 import org.mpetnuch.gauss.store.Store2D;
 import org.mpetnuch.gauss.store.array.ArrayStore1D.ArrayStructure1D;
-import org.mpetnuch.gauss.store.array.ArrayStructureSpliterator.ArrayStructure2DWithUnitStride;
-import org.mpetnuch.gauss.store.array.ArrayStructureSpliterator.ContiguousArrayStructureWithUnitStrideDimension;
-import org.mpetnuch.gauss.store.array.ArrayStructureSpliterator.GeneralArrayStructureSpliterator;
+import org.mpetnuch.gauss.store.array.ArrayStructureSpliterator.ContiguousStructureUnitStrideDimensionSpliterator;
+import org.mpetnuch.gauss.store.array.ArrayStructureSpliterator.NaturalOrderSpliterator;
 
-import java.util.PrimitiveIterator;
 import java.util.Spliterator;
 
 /**
@@ -39,28 +37,51 @@ public class ArrayStore2D extends ArrayStore<ArrayStore2D.ArrayStructure2D> impl
         super(array, structure);
     }
 
+    public void copyInto(double[] copy, int offset) {
+        if (structure.isContiguous()) {
+            System.arraycopy(array, structure.index(0), copy, offset, size());
+        }
+
+        final int rowCount = rowCount();
+        final int columnCount = columnCount();
+        for (int rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+            final ArrayStore1D row = row(rowIndex);
+            row.copyInto(copy, offset + rowIndex * columnCount);
+        }
+    }
+
+    public void copyInto(double[] copy) {
+        copyInto(copy, 0);
+    }
+
+    public double[] toArray() {
+        final double[] copy = new double[size()];
+        copyInto(copy);
+        return copy;
+    }
+
     @Override
     public Spliterator.OfDouble spliterator() {
         // we can only use the *fast* spliterators when the unit stride dimension if the row dimension
         // as otherwise we will be iterating in the transpose order
         if (ArrayStructure2D.ROW_DIMENSION == structure.unitStrideDimension()) {
             if (structure.isContiguous()) {
-                return new ContiguousArrayStructureWithUnitStrideDimension(structure, array);
+                return new ContiguousStructureUnitStrideDimensionSpliterator(structure, array);
             } else {
-                return new ArrayStructure2DWithUnitStride(structure, array);
+                return new NonContiguousStructureUnitStrideDimensionSpliterator(structure, array);
             }
         }
 
-        return new GeneralArrayStructureSpliterator(structure, array);
+        return new NaturalOrderSpliterator(structure, array);
     }
 
     @Override
-    public int getRowCount() {
+    public int rowCount() {
         return structure.rowCount();
     }
 
     @Override
-    public int getColumnCount() {
+    public int columnCount() {
         return structure.columnCount();
     }
 
@@ -101,168 +122,107 @@ public class ArrayStore2D extends ArrayStore<ArrayStore2D.ArrayStructure2D> impl
     public ArrayStore2D compact() {
         if (structure.isContiguous() && structure.offset() == 0 && array.length == size()) {
             return this;
-        } else {
-            return new ArrayStore2D(toArray(), structure.compact());
         }
+
+        final ArrayStructure2D compactStructure = new ArrayStructure2D(rowCount(), columnCount());
+        final double[] compactArray = toArray();
+        return new ArrayStore2D(compactArray, compactStructure);
     }
 
-    public void copyInto(double[] copy, int offset) {
-        final int rowCount = structure.rowCount;
-        final int columnCount = structure.columnCount;
+    public static final class ArrayStructure2D implements ArrayStructure {
+        public static final int ROW_DIMENSION = 0;
+        public static final int COLUMN_DIMENSION = 1;
 
-        if (structure.stride(ArrayStructure2D.ROW_DIMENSION) == 1) {
-            for (int rowIndex = 0; rowIndex < rowCount; rowIndex++) {
-                final ArrayStore1D row = row(rowIndex);
-                row.copyInto(copy, offset + rowIndex * columnCount);
-            }
-        } else if (structure.stride(ArrayStructure2D.COLUMN_DIMENSION) == 1) {
-            for (int columnIndex = 0; columnIndex < columnCount; columnIndex++) {
-                final ArrayStore1D column = column(columnIndex);
-                column.copyInto(copy, offset + columnIndex * rowCount);
-            }
-        } else {
-            final PrimitiveIterator.OfDouble spliterator = iterator();
-            while (spliterator.hasNext()) {
-                copy[offset++] = spliterator.nextDouble();
-            }
-        }
-    }
+        private final int rowStride, columnStride;
+        private final int rowCount, columnCount;
+        private final int offset;
+        private final int size;
 
-    public static class ArrayStructure2DBuilder {
-        protected final int rowCount, columnCount;
-        protected ArrayElementOrder arrayElementOrder = ArrayElementOrder.RowMajor;
-        protected int offset = 0;
-        protected int stride = 1;
-
-        public ArrayStructure2DBuilder(int rowCount, int columnCount) {
+        public ArrayStructure2D(int rowCount, int rowStride, int columnCount, int columnStride, int offset) {
             this.rowCount = rowCount;
+            this.rowStride = rowStride;
+
             this.columnCount = columnCount;
-        }
+            this.columnStride = columnStride;
 
-        public ArrayStructure2D build() {
-            if (arrayElementOrder == ArrayElementOrder.ColumnMajor) {
-                if (rowCount <= stride) {
-                    return new ColumnMajorArrayStructure2D(rowCount, columnCount, stride, offset);
-                } else {
-                    throw new IllegalArgumentException(String.format(
-                            "ColumnMajor columnStride[%d] < rowCount[%d]!", stride, columnCount));
-                }
-            } else if (arrayElementOrder == ArrayElementOrder.RowMajor) {
-                if (columnCount <= stride) {
-                    return new RowMajorArrayStructure2D(rowCount, columnCount, stride, offset);
-                } else {
-                    throw new IllegalArgumentException(String.format(
-                            "RowMajor columnStride[%d] < columnCount[%d]!", stride, columnCount));
-                }
-            } else {
-                throw new AssertionError("Unknown ArrayElementOrder: " + arrayElementOrder);
-            }
-        }
-
-        public ArrayStructure2DBuilder setArrayElementOrder(ArrayElementOrder arrayElementOrder) {
-            this.arrayElementOrder = arrayElementOrder;
-            return this;
-        }
-
-        public ArrayStructure2DBuilder setStride(int stride) {
-            this.stride = stride;
-            return this;
-        }
-
-        public ArrayStructure2DBuilder setOffset(int offset) {
             this.offset = offset;
-            return this;
-        }
-    }
-
-    public static final class RowMajorArrayStructure2D extends ArrayStructure2D {
-        private final int stride;
-
-        public RowMajorArrayStructure2D(int rowCount, int columnCount, int stride, int offset) {
-            super(rowCount, columnCount, offset);
-            this.stride = stride;
+            this.size = rowCount * columnCount;
         }
 
-        public RowMajorArrayStructure2D(int rowCount, int columnCount) {
-            this(rowCount, columnCount, columnCount, 0);
-        }
-
-        @Override
-        public ArrayStructure2D compact() {
-            if (isContiguous()) {
-                return this;
-            } else {
-                return new RowMajorArrayStructure2D(rowCount, columnCount);
-            }
+        public ArrayStructure2D(int rowCount, int columnCount) {
+            this(rowCount, columnCount, columnCount, 1, 0);
         }
 
         @Override
         public boolean hasUnitStrideDimension() {
-            return true;
+            return columnStride == 1 || rowStride == 1;
         }
 
         @Override
         public int unitStrideDimension() {
-            return ROW_DIMENSION;
+            if (columnStride == 1) {
+                return COLUMN_DIMENSION;
+            } else if (rowStride == 1) {
+                return ROW_DIMENSION;
+            } else {
+                return ArrayStructure.NO_UNIT_STRIDE_DIMENSION;
+            }
         }
 
         @Override
         public boolean isContiguous() {
-            return stride == columnCount;
+            return (columnStride == 1 && rowStride == columnCount) ||
+                    (rowStride == 1 && columnStride == rowCount);
         }
 
-        @Override
         public ArrayStructure2D transpose() {
-            return new ColumnMajorArrayStructure2D(columnCount, rowCount, stride, offset);
+            return new ArrayStructure2D(columnCount, columnStride, rowCount, rowStride, offset);
         }
 
-        @Override
         public ArrayStructure2D slice(int rowStartInclusive, int rowEndExclusive,
                                       int columnStartInclusive, int columnEndExclusive) {
             final int rowCount = rowEndExclusive - rowStartInclusive;
             final int columnCount = columnEndExclusive - columnStartInclusive;
-            final int sliceOffset = offset + stride * rowStartInclusive + columnStartInclusive;
+            final int sliceOffset = offset + rowStride * rowStartInclusive + columnStartInclusive * columnStride;
 
-            return new RowMajorArrayStructure2D(rowCount, columnCount, stride, sliceOffset);
+            return new ArrayStructure2D(rowCount, rowStride, columnCount, columnStride, sliceOffset);
         }
 
-        @Override
         public ArrayStructure1D row(int rowIndex) {
-            return new ArrayStructure1D(columnCount, 1, offset + stride * rowIndex);
+            return new ArrayStructure1D(columnCount, columnStride, offset + rowStride * rowIndex);
         }
 
-        @Override
         public ArrayStructure1D column(int columnIndex) {
-            return new ArrayStructure1D(rowCount, stride, offset + columnIndex);
+            return new ArrayStructure1D(rowCount, rowStride, offset + columnIndex * columnStride);
         }
 
         @Override
         public int index(int ordinal) {
-            return offset + Math.floorDiv(ordinal, columnCount) * rowCount + ordinal % columnCount;
+            return offset + Math.floorDiv(ordinal, columnCount) * rowStride +
+                    (ordinal % columnCount) * columnStride;
         }
 
-        @Override
         public int index(int rowIndex, int columnIndex) {
-            return offset + rowIndex * stride + columnIndex;
+            return offset + rowIndex * rowStride + columnIndex * columnStride;
         }
 
         @Override
-        public int[] indicies(int ordinal) {
+        public int[] indices(int ordinal) {
             return new int[]{Math.floorDiv(ordinal, columnCount), ordinal % columnCount};
         }
 
         @Override
-        public int ordinal(int... indicies) {
-            return indicies[0] * rowCount + indicies[1];
+        public int ordinal(int... indices) {
+            return indices[0] * columnCount + indices[1];
         }
 
         @Override
         public int stride(int dimension) {
             switch (dimension) {
                 case ROW_DIMENSION:
-                    return columnCount;
+                    return rowStride;
                 case COLUMN_DIMENSION:
-                    return 1;
+                    return columnStride;
                 default:
                     throw new InvalidRangeException(dimension, 0, 2);
             }
@@ -272,156 +232,21 @@ public class ArrayStore2D extends ArrayStore<ArrayStore2D.ArrayStructure2D> impl
         public int backstride(int dimension) {
             switch (dimension) {
                 case ROW_DIMENSION:
-                    return (rowCount - 1) * columnCount;
+                    return (rowCount - 1) * rowStride;
                 case COLUMN_DIMENSION:
-                    return columnCount - 1;
-                default:
-                    throw new InvalidRangeException(dimension, 0, 2);
-            }
-        }
-    }
-
-    public static final class ColumnMajorArrayStructure2D extends ArrayStructure2D {
-        private final int columnStride;
-
-        private ColumnMajorArrayStructure2D(int rowCount, int columnCount, int columnStride, int offset) {
-            super(rowCount, columnCount, offset);
-            this.columnStride = columnStride;
-        }
-
-        public ColumnMajorArrayStructure2D(int rowCount, int columnCount) {
-            this(rowCount, columnCount, rowCount, 0);
-        }
-
-        @Override
-        public ArrayStructure2D compact() {
-            if (isContiguous()) {
-                return this;
-            } else {
-                return new ColumnMajorArrayStructure2D(rowCount, columnCount);
-            }
-        }
-
-        @Override
-        public boolean isContiguous() {
-            return columnStride == rowCount;
-        }
-
-        @Override
-        public boolean hasUnitStrideDimension() {
-            return true;
-        }
-
-        @Override
-        public int unitStrideDimension() {
-            return COLUMN_DIMENSION;
-        }
-
-        @Override
-        public ArrayStructure2D transpose() {
-            return new RowMajorArrayStructure2D(columnCount, rowCount, columnStride, offset);
-        }
-
-        @Override
-        public ArrayStructure2D slice(int rowStartInclusive, int rowEndExclusive,
-                                      int columnStartInclusive, int columnEndExclusive) {
-            final int rowCount = rowEndExclusive - rowStartInclusive;
-            final int columnCount = columnEndExclusive - columnStartInclusive;
-            final int sliceOffset = offset + columnStride * columnStartInclusive + rowStartInclusive;
-
-            return new ColumnMajorArrayStructure2D(rowCount, columnCount, columnStride, sliceOffset);
-        }
-
-        @Override
-        public ArrayStructure1D row(int rowIndex) {
-            return new ArrayStructure1D(columnCount, columnStride, offset + rowIndex);
-        }
-
-        @Override
-        public ArrayStructure1D column(int columnIndex) {
-            return new ArrayStructure1D(rowCount, 1, offset + columnStride * columnIndex);
-        }
-
-        @Override
-        public int index(int ordinal) {
-            return offset + (ordinal % rowCount) * columnCount + Math.floorDiv(ordinal, rowCount);
-        }
-
-        @Override
-        public int index(int rowIndex, int columnIndex) {
-            return offset + columnIndex * columnStride + rowIndex;
-        }
-
-        @Override
-        public int[] indicies(int ordinal) {
-            return new int[]{Math.floorDiv(ordinal, rowCount), ordinal % rowCount};
-        }
-
-        @Override
-        public int ordinal(int... indicies) {
-            return indicies[1] * columnCount + indicies[0];
-        }
-
-        @Override
-        public int stride(int dimension) {
-            switch (dimension) {
-                case ROW_DIMENSION:
-                    return 1;
-                case COLUMN_DIMENSION:
-                    return rowCount;
+                    return (columnCount - 1) * columnStride;
                 default:
                     throw new InvalidRangeException(dimension, 0, 2);
             }
         }
 
         @Override
-        public int backstride(int dimension) {
-            switch (dimension) {
-                case ROW_DIMENSION:
-                    return rowCount - 1;
-                case COLUMN_DIMENSION:
-                    return (columnCount - 1) * rowCount;
-                default:
-                    throw new InvalidRangeException(dimension, 0, 2);
-            }
-        }
-    }
-
-    public static abstract class ArrayStructure2D implements ArrayStructure {
-        public static final int ROW_DIMENSION = 0;
-        public static final int COLUMN_DIMENSION = 1;
-
-        final int rowCount, columnCount;
-        final int offset;
-        final int size;
-
-        private ArrayStructure2D(int rowCount, int columnCount, int offset) {
-            this.offset = offset;
-            this.rowCount = rowCount;
-            this.columnCount = columnCount;
-            this.size = rowCount * columnCount;
-        }
-
-        public abstract int index(int rowIndex, int columnIndex);
-
-        public abstract ArrayStructure2D compact();
-
-        public abstract ArrayStructure2D transpose();
-
-        public abstract ArrayStructure2D slice(int rowStartInclusive, int rowEndExclusive,
-                                               int columnStartInclusive, int columnEndExclusive);
-
-        public abstract ArrayStructure1D row(int rowIndex);
-
-        public abstract ArrayStructure1D column(int columnIndex);
-
-        @Override
-        public int index(int... indicies) {
-            if (indicies.length != 2) {
+        public int index(int... indices) {
+            if (indices.length != 2) {
                 throw new IllegalArgumentException();
             }
 
-            return index(indicies[0], indicies[1]);
+            return index(indices[0], indices[1]);
         }
 
         public int lastIndex() {
@@ -461,6 +286,61 @@ public class ArrayStore2D extends ArrayStore<ArrayStore2D.ArrayStructure2D> impl
                 default:
                     throw new InvalidRangeException(dimension, 0, 2);
             }
+        }
+    }
+
+    public static final class NonContiguousStructureUnitStrideDimensionSpliterator extends ArrayStructureSpliterator<ArrayStructure2D> {
+        private final int nonUnitStriddedDimension;
+        private final int nonUnitStridedDimensionLength;
+        private final int nonUnitStriddedDimensionOffset;
+        private int nonUnitStriddedDimensionIndex;
+
+        private NonContiguousStructureUnitStrideDimensionSpliterator(ArrayStructure2D structure, double[] array, int index, int fence) {
+            super(structure, array, index, fence);
+
+            final int unitStrideDimension = structure.unitStrideDimension();
+            switch (unitStrideDimension) {
+                case ArrayStructure2D.ROW_DIMENSION:
+                    this.nonUnitStriddedDimension = ArrayStructure2D.COLUMN_DIMENSION;
+                    break;
+                case ArrayStructure2D.COLUMN_DIMENSION:
+                    this.nonUnitStriddedDimension = ArrayStructure2D.ROW_DIMENSION;
+                    break;
+                default:
+                    throw new AssertionError(String.format(
+                            "ArrayStructure2D had unexpected unit stride dimension: %d", unitStrideDimension));
+            }
+
+            this.nonUnitStriddedDimensionIndex = structure.indices(index)[nonUnitStriddedDimension];
+            this.nonUnitStridedDimensionLength = structure.dimensionLength(nonUnitStriddedDimension);
+            this.nonUnitStriddedDimensionOffset = structure.stride(nonUnitStriddedDimension) +
+                    structure.backstride(nonUnitStriddedDimension);
+        }
+
+        public NonContiguousStructureUnitStrideDimensionSpliterator(ArrayStructure2D structure, double[] array) {
+            this(structure, array, 0, structure.lastIndex());
+        }
+
+        @Override
+        public OfDouble trySplit() {
+            final int lo = index, mid = (lo + fence) >>> 1;
+            if (lo < mid) {
+                this.nonUnitStriddedDimensionIndex = structure.indices(mid)[nonUnitStriddedDimension];
+                return new NonContiguousStructureUnitStrideDimensionSpliterator(structure, array, lo, mid);
+            } else {
+                // can't split any more
+                return null;
+            }
+        }
+
+        @Override
+        int nextArrayIndex(int currentArrayIndex) {
+            if (++nonUnitStriddedDimensionIndex < nonUnitStridedDimensionLength) {
+                return currentArrayIndex + 1;
+            }
+
+            nonUnitStriddedDimensionIndex = 0;
+            return currentArrayIndex + nonUnitStriddedDimensionOffset;
         }
     }
 }

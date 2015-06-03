@@ -49,7 +49,7 @@ public class JBlasLevel3Test {
     @Parameterized.Parameters
     public static List<int[]> primeNumbers() {
         final List<int[]> parameters = new ArrayList<>();
-        parameters.add(new int[]{3000, 3500, 64});
+        parameters.add(new int[]{1703, 1423, 1064});
         return parameters;
     }
 
@@ -65,20 +65,11 @@ public class JBlasLevel3Test {
         final DenseMatrix a = DenseMatrix.from(generateData(M, P));
         final DenseMatrix b = DenseMatrix.from(generateData(P, N));
 
-        final Array2DRowRealMatrix aa = new Array2DRowRealMatrix(generateData(M, P));
-        final Array2DRowRealMatrix bb = new Array2DRowRealMatrix(generateData(P, N));
-
-        IntStream.range(0, 100).mapToLong(value -> {
+        IntStream.range(0, 25).mapToLong(value -> {
             final long start = System.currentTimeMillis();
             a.multiply(b);
             return System.currentTimeMillis() - start;
         }).average().ifPresent(delta -> System.out.printf("Michael: %.5f\n", delta));
-
-//        IntStream.range(0, 100).mapToLong(value -> {
-//            final long start = System.currentTimeMillis();
-//            aa.multiply(bb);
-//            return System.currentTimeMillis() - start;
-//        }).average().ifPresent(delta -> System.out.printf("ApacheC: %.5f\n", delta));
     }
 
     @Test

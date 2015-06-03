@@ -51,22 +51,6 @@ public abstract class ArrayStore<Structure extends ArrayStructure> implements St
         return structure;
     }
 
-    public abstract void copyInto(double[] copy, int offset);
-
-    public void copyInto(double[] copy) {
-        copyInto(copy, 0);
-    }
-
-    public double[] toArray() {
-        final double[] copy = new double[size()];
-        copyInto(copy);
-        return copy;
-    }
-
-    public boolean isCompact() {
-        return array.length == size() && structure.isContiguous();
-    }
-
     @Override
     public final int dimension(int dimension) {
         return structure.dimensionLength(dimension);
