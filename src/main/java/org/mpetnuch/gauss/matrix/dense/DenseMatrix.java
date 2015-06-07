@@ -27,7 +27,7 @@ import org.mpetnuch.gauss.matrix.MatrixType;
 import org.mpetnuch.gauss.matrix.TriangularMatrixType;
 import org.mpetnuch.gauss.store.array.ArrayStore1D;
 import org.mpetnuch.gauss.store.array.ArrayStore2D;
-import org.mpetnuch.gauss.store.array.ArrayStore2D.ArrayStructure2D;
+import org.mpetnuch.gauss.structure.array.ArrayStructure2D;
 
 /**
  * @author Michael Petnuch
@@ -104,7 +104,7 @@ public abstract class DenseMatrix implements Matrix {
         return new DenseGeneralMatrix(arrayStore);
     }
 
-    abstract DenseMatrix create(ArrayStore2D elementAccessor);
+    abstract DenseMatrix create(ArrayStore2D store);
 
     public DenseMatrix multiply(DenseMatrix that) {
         final int M = this.getNumberOfRows(), N = that.getNumberOfColumns();
@@ -164,11 +164,10 @@ public abstract class DenseMatrix implements Matrix {
     }
 
     private static final class DenseMatrixRow extends DenseVector implements MatrixRow {
-        private static final long serialVersionUID = -3104116423696752144L;
         private final int index;
 
-        private DenseMatrixRow(ArrayStore1D elementAccessor, int index) {
-            super(elementAccessor);
+        private DenseMatrixRow(ArrayStore1D store, int index) {
+            super(store);
             this.index = index;
         }
 
@@ -179,11 +178,10 @@ public abstract class DenseMatrix implements Matrix {
     }
 
     private static final class DenseMatrixColumn extends DenseVector implements MatrixColumn {
-        private static final long serialVersionUID = 7774119470007792583L;
         private final int index;
 
-        private DenseMatrixColumn(ArrayStore1D elementAccessor, int index) {
-            super(elementAccessor);
+        private DenseMatrixColumn(ArrayStore1D store, int index) {
+            super(store);
             this.index = index;
         }
 

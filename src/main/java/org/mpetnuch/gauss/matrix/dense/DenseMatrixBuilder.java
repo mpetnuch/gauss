@@ -20,21 +20,21 @@
 package org.mpetnuch.gauss.matrix.dense;
 
 import org.mpetnuch.gauss.matrix.MatrixBuilder;
-import org.mpetnuch.gauss.store.array.MutableArrayStore2D;
+import org.mpetnuch.gauss.store.array.ArrayStore2D;
 
 /**
  * @author Michael Petnuch
  * @version $Id$
  */
 public class DenseMatrixBuilder implements MatrixBuilder<DenseMatrix, DenseMatrixBuilder> {
-    private final MutableArrayStore2D store;
+    private final ArrayStore2D store;
 
-    private DenseMatrixBuilder(MutableArrayStore2D store) {
+    private DenseMatrixBuilder(ArrayStore2D store) {
         this.store = store;
     }
 
     public DenseMatrixBuilder(int rowCount, int columnCount) {
-        this.store = new MutableArrayStore2D(rowCount, columnCount);
+        this.store = new ArrayStore2D(rowCount, columnCount);
     }
 
     @Override

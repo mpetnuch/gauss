@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2015, Michael Petnuch. All Rights Reserved.
  *
- * This file `StoreAnyD.java` is part of Gauss.
+ * This file `DimensionMismatchException.java` is part of Gauss.
  *
  * Gauss is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,14 +17,23 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.mpetnuch.gauss.store;
+package org.mpetnuch.gauss.exception;
 
 /**
  * @author Michael Petnuch
- * @version $Id$
  */
-public interface StoreAnyD extends Store {
-    double get(int... indices);
+public class DimensionMismatchException extends IllegalArgumentException {
+    private static final long serialVersionUID = 3567983539306804675L;
+    private final Integer[] expected;
+    private final Integer[] actual;
 
-    int dimension(int dimension);
+    public DimensionMismatchException(Integer expected, Integer actual) {
+        this.expected = new Integer[]{expected};
+        this.actual = new Integer[]{actual};
+    }
+
+    public DimensionMismatchException(Integer[] expected, Integer[] actual) {
+        this.expected = expected;
+        this.actual = actual;
+    }
 }

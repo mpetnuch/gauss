@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2015, Michael Petnuch. All Rights Reserved.
  *
- * This file `Store1D.java` is part of Gauss.
+ * This file `DataFlag.java` is part of Gauss.
  *
  * Gauss is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,17 +19,12 @@
 
 package org.mpetnuch.gauss.store;
 
-
 /**
  * @author Michael Petnuch
- * @version $Id$
  */
-public interface Store1D extends Store {
-    default int length() {
-        return structure().size();
-    }
-
-    double get(int index);
-
-    Store1D slice(int startIndex, int endIndex);
+public enum DataFlag {
+    UPDATEIFCOPY,
+    ALIGNED,
+    WRITEABLE,
+    OWNDATA
 }

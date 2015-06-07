@@ -28,13 +28,13 @@ import org.mpetnuch.gauss.store.array.ArrayStore2D;
 public class DenseGeneralMatrix extends DenseMatrix {
     private static final long serialVersionUID = -1336404666416014744L;
 
-    public DenseGeneralMatrix(ArrayStore2D elementAccessor) {
-        super(elementAccessor);
+    public DenseGeneralMatrix(ArrayStore2D store) {
+        super(store);
     }
 
     @Override
-    DenseGeneralMatrix create(ArrayStore2D elementAccessor) {
-        return new DenseGeneralMatrix(elementAccessor);
+    DenseGeneralMatrix create(ArrayStore2D store) {
+        return new DenseGeneralMatrix(store);
     }
 
 }

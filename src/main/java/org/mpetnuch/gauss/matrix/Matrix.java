@@ -61,7 +61,7 @@ public interface Matrix extends Serializable {
     }
 
     default double[][] toArray2D() {
-        return rows().map(MatrixRow::toArray).toArray(double[][]::new);
+        return rows().map(row -> row.stream().toArray()).toArray(double[][]::new);
     }
 
     default double[] toArray() {

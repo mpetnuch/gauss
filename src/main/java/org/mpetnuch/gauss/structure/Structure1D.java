@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2015, Michael Petnuch. All Rights Reserved.
  *
- * This file `ArrayElementOrder.java` is part of Gauss.
+ * This file `Structure1D.java` is part of Gauss.
  *
  * Gauss is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,22 +17,32 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.mpetnuch.gauss.store.array;
+package org.mpetnuch.gauss.structure;
+
+import org.mpetnuch.gauss.exception.InvalidRangeException;
 
 /**
  * @author Michael Petnuch
- * @version $Id$
  */
-public enum ArrayElementOrder {
-    RowMajor(0), ColumnMajor(1);
+public interface Structure1D extends Structure {
+    int length();
 
-    private final int strideDimension;
-
-    ArrayElementOrder(int strideDimension) {
-        this.strideDimension = strideDimension;
+    @Override
+    default int size() {
+        return length();
     }
 
-    public int getStrideDimension() {
-        return strideDimension;
+    @Override
+    default int dimension() {
+        return 1;
+    }
+
+    @Override
+    default int dimensionLength(int dimension) {
+        if (dimension == 0) {
+            return length();
+        }
+
+        throw new InvalidRangeException(dimension, 0, 0);
     }
 }

@@ -22,62 +22,46 @@ package org.mpetnuch.gauss.matrix.dense;
 import org.mpetnuch.gauss.matrix.Vector;
 import org.mpetnuch.gauss.store.array.ArrayStore1D;
 
-import java.util.stream.DoubleStream;
+import java.util.Spliterator;
 
 /**
  * @author Michael Petnuch
  * @version $Id$
  */
 public class DenseVector implements Vector  {
-    private static final long serialVersionUID = 1577827666390044084L;
-    private final ArrayStore1D elementAccessor;
+    private final ArrayStore1D store;
 
-    public DenseVector(ArrayStore1D elementAccessor) {
-        this.elementAccessor = elementAccessor;
+    public DenseVector(ArrayStore1D store) {
+        this.store = store;
     }
 
     @Override
     public double get(int i) {
-        return elementAccessor.get(i);
+        return store.get(i);
     }
 
     @Override
     public int size() {
-        return elementAccessor.structure().size();
+        return store.size();
     }
 
     @Override
     public DenseMatrix reshape(int rowCount, int columnCount) {
-        return new DenseGeneralMatrix(elementAccessor.reshape(rowCount, columnCount));
+        return new DenseGeneralMatrix(store.reshape(rowCount, columnCount));
     }
 
     @Override
     public Vector slice(int startInclusive, int endExclusive) {
-        return new DenseVector(elementAccessor.slice(startInclusive, endExclusive));
+        return new DenseVector(store.slice(startInclusive, endExclusive));
     }
 
     @Override
     public Vector compact() {
-        return new DenseVector(elementAccessor.compact());
+        return new DenseVector(store.compact());
     }
 
     @Override
-    public DoubleStream stream() {
-        return elementAccessor.stream();
-    }
-
-    @Override
-    public double[] toArray() {
-        return elementAccessor.toArray();
-    }
-
-    @Override
-    public void copyInto(double[] copy) {
-        elementAccessor.copyInto(copy);
-    }
-
-    @Override
-    public void copyInto(double[] copy, int offset) {
-        elementAccessor.copyInto(copy, offset);
+    public Spliterator.OfDouble spliterator() {
+        return store.spliterator();
     }
 }

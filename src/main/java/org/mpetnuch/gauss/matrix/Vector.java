@@ -19,14 +19,18 @@
 
 package org.mpetnuch.gauss.matrix;
 
-import java.io.Serializable;
+import java.util.PrimitiveIterator;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.function.DoubleConsumer;
 import java.util.stream.DoubleStream;
+import java.util.stream.StreamSupport;
 
 /**
  * @author Michael Petnuch
  * @version $Id$
  */
-public interface Vector extends Serializable {
+public interface Vector extends Iterable<Double> {
     double get(int i);
 
     int size();
@@ -37,19 +41,47 @@ public interface Vector extends Serializable {
 
     Vector compact();
 
-    DoubleStream stream();
-
-    double[] toArray();
-
-    void copyInto(double[] copy, int offset);
-
-    void copyInto(double[] copy);
-
     default Matrix toColumnMatrix() {
         return reshape(size(), 1);
     }
 
     default Matrix toRowMatrix() {
         return reshape(1, size());
+    }
+
+
+    default double[] toArray() {
+        final double[] copy = new double[size()];
+        copyInto(copy);
+        return copy;
+    }
+
+    default void copyInto(double[] copy) {
+        copyInto(copy, 0);
+    }
+
+    default void copyInto(double[] copy, int offset) {
+        final PrimitiveIterator.OfDouble iterator = iterator();
+        while (iterator.hasNext()) {
+            copy[offset++] = iterator.nextDouble();
+        }
+    }
+
+    Spliterator.OfDouble spliterator();
+
+    default PrimitiveIterator.OfDouble iterator() {
+        return Spliterators.iterator(spliterator());
+    }
+
+    default DoubleStream stream() {
+        return StreamSupport.doubleStream(spliterator(), false);
+    }
+
+    default DoubleStream parallelStream() {
+        return StreamSupport.doubleStream(spliterator(), true);
+    }
+
+    default void forEach(DoubleConsumer action) {
+        stream().forEach(action);
     }
 }

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2015, Michael Petnuch. All Rights Reserved.
  *
- * This file `Store1D.java` is part of Gauss.
+ * This file `ArrayStructure.java` is part of Gauss.
  *
  * Gauss is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,19 +17,38 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.mpetnuch.gauss.store;
+package org.mpetnuch.gauss.structure.array;
 
+
+import org.mpetnuch.gauss.structure.Structure;
 
 /**
  * @author Michael Petnuch
- * @version $Id$
  */
-public interface Store1D extends Store {
-    default int length() {
-        return structure().size();
+public interface ArrayStructure extends Structure {
+    int NO_UNIT_STRIDE_DIMENSION = 1;
+
+    int lastIndex();
+
+    int index(int ordinal);
+
+    int index(int... indices);
+
+    int[] indices(int ordinal);
+
+    int ordinal(int... indices);
+
+    int offset();
+
+    int stride(int dimension);
+
+    int backstride(int dimension);
+
+    boolean isContiguous();
+
+    int unitStrideDimension();
+
+    default boolean hasUnitStrideDimension() {
+        return NO_UNIT_STRIDE_DIMENSION != unitStrideDimension();
     }
-
-    double get(int index);
-
-    Store1D slice(int startIndex, int endIndex);
 }

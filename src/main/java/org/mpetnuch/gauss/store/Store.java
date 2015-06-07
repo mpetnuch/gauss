@@ -19,29 +19,62 @@
 
 package org.mpetnuch.gauss.store;
 
+import org.mpetnuch.gauss.structure.Structure;
+
 import java.util.PrimitiveIterator;
+import java.util.Set;
 import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.function.DoubleConsumer;
 import java.util.stream.DoubleStream;
+import java.util.stream.StreamSupport;
 
 /**
  * @author Michael Petnuch
  * @version $Id$
  */
 public interface Store extends Iterable<Double> {
+    Set<DataFlag> flags();
 
-    @Override
-    PrimitiveIterator.OfDouble iterator();
+    double get(int... indices);
 
-    Spliterator.OfDouble spliterator();
+    Store reshape(int... dimensions);
 
-    DoubleStream stream();
+    Store1D reshape(int length);
 
-    int size();
+    Store2D reshape(int length, int width);
 
     Structure structure();
 
+    default int dimensionLength(int dimension) {
+        return structure().dimensionLength(dimension);
+    }
+
+    default int size() {
+        return structure().size();
+    }
+
+    @Override
+    Spliterator.OfDouble spliterator();
+
+    @Override
+    default PrimitiveIterator.OfDouble iterator() {
+        return Spliterators.iterator(spliterator());
+    }
+
+    default DoubleStream stream() {
+        return StreamSupport.doubleStream(spliterator(), false);
+    }
+
+    default DoubleStream parallelStream() {
+        return StreamSupport.doubleStream(spliterator(), true);
+    }
+
     default void forEach(DoubleConsumer action) {
-        stream().forEach(action);
+        spliterator().forEachRemaining(action);
+    }
+
+    default double[] toArray() {
+        return stream().toArray();
     }
 }

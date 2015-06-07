@@ -19,64 +19,29 @@
 
 package org.mpetnuch.gauss.store.array;
 
-import org.mpetnuch.gauss.store.StoreAnyD;
-
-import java.util.Objects;
-import java.util.PrimitiveIterator;
-import java.util.Spliterators;
-import java.util.stream.DoubleStream;
-import java.util.stream.StreamSupport;
+import org.mpetnuch.gauss.store.Store;
+import org.mpetnuch.gauss.structure.array.ArrayStructure;
+import org.mpetnuch.gauss.structure.array.spliterator.ArrayStructureSpliterator;
 
 /**
  * @author Michael Petnuch
  * @version $Id$
  */
-public abstract class ArrayStore<Structure extends ArrayStructure> implements StoreAnyD {
-    final double[] array;
-    final Structure structure;
-
-    protected ArrayStore(double[] array, Structure structure) {
-        Objects.requireNonNull(array, "Array cannot be null");
-        Objects.requireNonNull(structure, "Structure cannot be null");
-
-        if (structure.size() > array.length) {
-            throw new IllegalArgumentException("Structure is not compatible with array size");
-        }
-
-        this.structure = structure;
-        this.array = array;
-    }
-
-    public Structure structure() {
-        return structure;
-    }
+public interface ArrayStore extends Store {
+    @Override
+    ArrayStore1D reshape(int length);
 
     @Override
-    public final int dimension(int dimension) {
-        return structure.dimensionLength(dimension);
-    }
+    ArrayStore2D reshape(int length, int width);
 
     @Override
-    public final int size() {
-        return structure.size();
-    }
+    ArrayStore reshape(int... dimensions);
 
     @Override
-    public double get(int... indices) {
-        if (structure.dimension() != indices.length) {
-            throw new IllegalArgumentException();
-        }
-
-        return array[structure.index(indices)];
-    }
+    ArrayStructure structure();
 
     @Override
-    public PrimitiveIterator.OfDouble iterator() {
-        return Spliterators.iterator(spliterator());
-    }
+    ArrayStructureSpliterator spliterator();
 
-    @Override
-    public DoubleStream stream() {
-        return StreamSupport.doubleStream(spliterator(), false);
-    }
+    ArrayStore compact();
 }

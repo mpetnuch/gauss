@@ -20,6 +20,7 @@
 package org.mpetnuch.gauss.store.array;
 
 import org.junit.Test;
+import org.mpetnuch.gauss.structure.array.ArrayStructure2D;
 
 import java.util.Arrays;
 
@@ -27,35 +28,40 @@ import java.util.Arrays;
  * @author Michael Petnuch
  */
 public class ArrayStructureTest {
-    @Test
-    public void testMe() {
-        final double[] array = new double[]{1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0};
-        final ArrayStore2D.ArrayStructure2D structure =
-                new ArrayStore2D.ArrayStructure2D(3, 3).transpose();
-
-        final ArrayStore2D store = new ArrayStore2D(array, structure);
-//        store.stream().forEach(System.out::println);
-
-        ArrayStore2D sliced = store.slice(0, 2, 0, 3);
-//        sliced.stream().forEach(System.out::println);
-//        System.out.println(Arrays.toString(sliced.toArray()));
-
-    }
 
     @Test
     public void testStructure() {
-        final int dimensions[] = new int[]{5, 7};
-        final int strides[] = new int[]{1, 7};
-        ArrayStructure structure = new ArrayStoreAnyD.ArrayStructureAnyD(
-                dimensions,
-                strides,
-                0
-        );
+        final double[] x = new double[]{
+                1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+                17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32
+        };
 
-        for (int i = 0; i < 35; i++) {
-            int[] tuple = structure.indices(i);
-            int k = structure.ordinal(tuple);
-            System.out.println(String.format("%d -> %s -> %d", i, Arrays.toString(tuple), k));
+        final ArrayStructure2D structure = new ArrayStructure2D(2, 16, 8, 2, 0);
+        final ArrayStore2D store = new ArrayStore2D(x, structure);
+        for (double[] row : store.toArray2D()) {
+            System.out.println(Arrays.toString(row));
+        }
+
+        System.out.println();
+
+        final ArrayStructure2D structureX = new ArrayStructure2D(8, 4, 2, 2, 0);
+        final ArrayStore2D storeX = new ArrayStore2D(x, structureX);
+        for (double[] row : storeX.toArray2D()) {
+            System.out.println(Arrays.toString(row));
+        }
+
+        System.out.println();
+
+        final ArrayStore2D storeSlice = store.slice(0, 2, 2, 4);
+        for (double[] row : storeSlice.toArray2D()) {
+            System.out.println(Arrays.toString(row));
+        }
+
+        System.out.println();
+
+        final ArrayStore2D storeReshape = store.reshape(8, 2);
+        for (double[] row : storeReshape.toArray2D()) {
+            System.out.println(Arrays.toString(row));
         }
     }
 }

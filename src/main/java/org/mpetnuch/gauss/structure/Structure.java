@@ -17,7 +17,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.mpetnuch.gauss.store;
+package org.mpetnuch.gauss.structure;
 
 /**
  * @author Michael Petnuch

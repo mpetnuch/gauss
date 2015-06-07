@@ -55,8 +55,8 @@ public class DenseTriangularMatrix extends DenseMatrix implements TriangularMatr
     }
 
     @Override
-    DenseTriangularMatrix create(ArrayStore2D elementAccessor) {
-        return new DenseTriangularMatrix(elementAccessor, triangularMatrixType, matrixDiagonalType);
+    DenseTriangularMatrix create(ArrayStore2D store) {
+        return new DenseTriangularMatrix(store, triangularMatrixType, matrixDiagonalType);
     }
 
     @Override

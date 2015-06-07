@@ -19,170 +19,81 @@
 
 package org.mpetnuch.gauss.store.array;
 
-import org.mpetnuch.gauss.store.array.ArrayStructureSpliterator.NaturalOrderSpliterator;
+import org.mpetnuch.gauss.store.DataFlag;
+import org.mpetnuch.gauss.structure.array.ArrayStructure;
+import org.mpetnuch.gauss.structure.array.ArrayStructure1D;
+import org.mpetnuch.gauss.structure.array.ArrayStructure2D;
+import org.mpetnuch.gauss.structure.array.ArrayStructureAnyD;
+import org.mpetnuch.gauss.structure.array.spliterator.ArrayStructureSpliterator;
+import org.mpetnuch.gauss.structure.array.spliterator.NaturalOrderSpliterator;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
-import java.util.Arrays;
-import java.util.Spliterator;
-import java.util.stream.IntStream;
+import java.util.EnumSet;
+import java.util.Set;
 
 /**
  * @author Michael Petnuch
  */
-public class ArrayStoreAnyD extends ArrayStore<ArrayStoreAnyD.ArrayStructureAnyD> {
+public class ArrayStoreAnyD implements ArrayStore {
+
+    private final Set<DataFlag> flags = EnumSet.noneOf(DataFlag.class);
+    private final ArrayStructureAnyD structure;
+    private final double[] array;
 
     protected ArrayStoreAnyD(double[] array, ArrayStructureAnyD structure) {
-        super(array, structure);
+        this.array = array;
+        this.structure = structure;
+    }
+
+    protected ArrayStoreAnyD(double[] array, ArrayStructure structure) {
+        this.array = array;
+        this.structure = ArrayStructureAnyD.from(structure);
     }
 
     @Override
-    public Spliterator.OfDouble spliterator() {
-        return new NaturalOrderSpliterator(structure, array);
+    public Set<DataFlag> flags() {
+        return flags;
     }
 
-    public static class ArrayStructureAnyD implements ArrayStructure {
-        private final int dimension;
-        private final int size;
-        private final int offset;
-        private final int lastIndex;
-        private final int unitStrideDimension;
-        private final boolean contiguous;
-        private final int[] dimensions, strides, backstrides, factors;
+    @Override
+    public double get(int... indices) {
+        return array[structure.index(indices)];
+    }
 
-        public ArrayStructureAnyD(int[] dimensions, int[] strides, int offset) {
-            this.offset = offset;
-            this.strides = strides;
-            this.dimension = dimensions.length;
-            this.dimensions = dimensions;
+    @Override
+    public ArrayStore1D reshape(int length) {
+        return new ArrayStore1D(toArray(), new ArrayStructure1D(length));
+    }
 
-            this.factors = computeFactors(dimensions);
+    @Override
+    public ArrayStore2D reshape(int rowCount, int columnCount) {
+        return new ArrayStore2D(toArray(), new ArrayStructure2D(rowCount, columnCount));
+    }
 
-            this.size = Arrays.stream(dimensions).
-                    reduce(1, (product, n) -> product * n);
-
-            final int[] dimensionm1 = Arrays.stream(dimensions).
-                    map(n -> n - 1).toArray();
-
-            this.backstrides = product(strides, dimensionm1).toArray();
-
-            this.lastIndex = offset + product(dimensionm1, strides).sum();
-
-            this.unitStrideDimension = IntStream.range(0, dimension).
-                    filter(value -> strides[value] == 1).
-                    findFirst().orElse(ArrayStructure.NO_UNIT_STRIDE_DIMENSION);
-
-            this.contiguous = isContiguous(dimensions, strides, dimension);
+    @Override
+    public ArrayStore reshape(int... dimensions) {
+        switch (dimensions.length) {
+            case 2:
+                return reshape(dimensions[0], dimensions[1]);
+            case 1:
+                return reshape(dimensions[1]);
         }
 
-        private static boolean isContiguous(int[] dimensions, int[] strides, int dimension) {
-            return false;
-        }
+        return new ArrayStoreAnyD(toArray(), new ArrayStructureAnyD(dimensions));
+    }
 
-        private static int[] computeFactors(int[] dimensions) {
-            final int n = dimensions.length;
-            final int[] factors = new int[n];
+    @Override
+    public ArrayStructureAnyD structure() {
+        return structure;
+    }
 
-            factors[n - 1] = 1;
-            for (int i = n - 2; i >= 0; i--) {
-                factors[i] = dimensions[i] * factors[i + 1];
-            }
+    @Override
+    public ArrayStore compact() {
+        throw new NotImplementedException();
+    }
 
-            return factors;
-        }
-
-        private static IntStream product(int[] a, int[] b) {
-            if (a.length != b.length) {
-                throw new IllegalArgumentException();
-            }
-
-            return IntStream.range(0, a.length).map(n -> a[n] * b[n]);
-        }
-
-        @Override
-        public int index(int... indices) {
-            return offset + product(indices, strides).sum();
-        }
-
-        @Override
-        public int lastIndex() {
-            return lastIndex;
-        }
-
-        public int[] indices(int ordinal) {
-            final int[] indices = new int[dimension];
-
-            indices[0] = ordinal;
-            for (int i = 1; i < dimension; i++) {
-                indices[i] = indices[i - 1] % factors[i - 1];
-            }
-
-            for (int i = 0; i < dimension; i++) {
-                indices[i] = Math.floorDiv(indices[i], factors[i]);
-            }
-
-            return indices;
-        }
-
-        @Override
-        public int ordinal(int[] indices) {
-            return IntStream.range(0, dimension).
-                    reduce(0, (sum, i) -> sum + indices[i] * factors[i]);
-        }
-
-        @Override
-        public int index(int ordinal) {
-            final int[] l = new int[dimension];
-
-            l[0] = ordinal;
-            for (int i = 1; i < dimension; i++) {
-                l[i] = l[i - 1] % factors[i - 1];
-            }
-
-            int position = offset;
-            for (int i = 0; i < dimension; i++) {
-                position += Math.floorDiv(l[i], factors[i]) * strides[i];
-            }
-
-            return position;
-        }
-
-        @Override
-        public int offset() {
-            return offset;
-        }
-
-        @Override
-        public int stride(int dimension) {
-            return strides[dimension];
-        }
-
-        @Override
-        public int backstride(int dimension) {
-            return backstrides[dimension];
-        }
-
-        @Override
-        public boolean isContiguous() {
-            return contiguous;
-        }
-
-        @Override
-        public int unitStrideDimension() {
-            return unitStrideDimension;
-        }
-
-        @Override
-        public int dimension() {
-            return dimension;
-        }
-
-        @Override
-        public int dimensionLength(int dimension) {
-            return dimensions[dimension];
-        }
-
-        @Override
-        public int size() {
-            return size;
-        }
+    @Override
+    public ArrayStructureSpliterator spliterator() {
+        return new NaturalOrderSpliterator(structure, array);
     }
 }
