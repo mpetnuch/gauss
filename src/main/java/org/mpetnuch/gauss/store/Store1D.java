@@ -20,6 +20,8 @@
 package org.mpetnuch.gauss.store;
 
 
+import org.mpetnuch.gauss.structure.Slice;
+
 /**
  * @author Michael Petnuch
  * @version $Id$
@@ -30,6 +32,8 @@ public interface Store1D extends Store {
     }
 
     double get(int index);
+
+    Store1D slice(Slice slice);
 
     Store1D slice(int startIndex, int endIndex);
 }

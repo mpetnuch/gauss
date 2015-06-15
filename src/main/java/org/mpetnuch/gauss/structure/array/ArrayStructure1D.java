@@ -21,9 +21,12 @@ package org.mpetnuch.gauss.structure.array;
 
 import org.mpetnuch.gauss.exception.DimensionMismatchException;
 import org.mpetnuch.gauss.exception.InvalidRangeException;
+import org.mpetnuch.gauss.structure.Slice;
 import org.mpetnuch.gauss.structure.Structure1D;
 
 import java.util.Arrays;
+
+import static org.mpetnuch.gauss.misc.MathUtils.ceilDiv;
 
 /**
  * @author Michael Petnuch
@@ -162,6 +165,29 @@ public class ArrayStructure1D implements ArrayStructure, Structure1D {
         }
 
         return this;
+    }
+
+    public ArrayStructure1D swapAxis(int axis1, int axis2) {
+        if (axis1 != 0 || axis2 != 0) {
+            throw new IllegalArgumentException();
+        }
+
+        return this;
+    }
+
+    @Override
+    public ArrayStructure1D slice(Slice... slices) {
+        if (slices.length == 1) {
+            return slice(slices[0]);
+        }
+
+        throw new DimensionMismatchException(1, slices.length);
+    }
+
+    @Override
+    public ArrayStructure1D slice(Slice slice) {
+        final int sliceLength = ceilDiv(slice.stop(length) - slice.start(length), slice.step());
+        return new ArrayStructure1D(sliceLength, stride * slice.step(), index(slice.start(length)));
     }
 
     public ArrayStructure1D slice(int startInclusive, int endExclusive) {

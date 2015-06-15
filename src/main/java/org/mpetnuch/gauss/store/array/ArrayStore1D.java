@@ -22,12 +22,15 @@ package org.mpetnuch.gauss.store.array;
 import org.mpetnuch.gauss.exception.DimensionMismatchException;
 import org.mpetnuch.gauss.store.DataFlag;
 import org.mpetnuch.gauss.store.Store1D;
+import org.mpetnuch.gauss.structure.Slice;
 import org.mpetnuch.gauss.structure.array.ArrayStructure1D;
 import org.mpetnuch.gauss.structure.array.spliterator.ArrayStructureSpliterator;
 import org.mpetnuch.gauss.structure.array.spliterator.NaturalOrderSpliterator;
 
 import java.util.EnumSet;
 import java.util.Set;
+
+import static org.mpetnuch.gauss.structure.Slice.S;
 
 /**
  * @author Michael Petnuch
@@ -57,9 +60,15 @@ public class ArrayStore1D implements ArrayStore, Store1D {
         return array[structure.index(index)];
     }
 
+
+    @Override
+    public ArrayStore1D slice(Slice slice) {
+        return new ArrayStore1D(array, structure.slice(slice));
+    }
+
     @Override
     public ArrayStore1D slice(int startInclusive, int endExclusive) {
-        return new ArrayStore1D(array, structure.slice(startInclusive, endExclusive));
+        return new ArrayStore1D(array, structure.slice(S(startInclusive, endExclusive)));
     }
 
     @Override
@@ -86,6 +95,16 @@ public class ArrayStore1D implements ArrayStore, Store1D {
         }
 
         throw new DimensionMismatchException(length(), length);
+    }
+
+    @Override
+    public ArrayStore1D slice(Slice... slices) {
+        return new ArrayStore1D(array, structure.slice(slices));
+    }
+
+    @Override
+    public ArrayStore1D swapAxis(int axis1, int axis2) {
+        return new ArrayStore1D(array, structure.swapAxis(axis1, axis2));
     }
 
     @Override

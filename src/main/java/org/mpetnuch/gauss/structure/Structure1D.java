@@ -45,4 +45,6 @@ public interface Structure1D extends Structure {
 
         throw new InvalidRangeException(dimension, 0, 0);
     }
+
+    Structure1D slice(Slice slice);
 }

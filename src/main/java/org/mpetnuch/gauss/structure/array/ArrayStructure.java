@@ -20,6 +20,7 @@
 package org.mpetnuch.gauss.structure.array;
 
 
+import org.mpetnuch.gauss.structure.Slice;
 import org.mpetnuch.gauss.structure.Structure;
 
 /**
@@ -27,6 +28,12 @@ import org.mpetnuch.gauss.structure.Structure;
  */
 public interface ArrayStructure extends Structure {
     int NO_UNIT_STRIDE_DIMENSION = 1;
+
+    @Override
+    ArrayStructure swapAxis(int axis1, int axis2);
+
+    @Override
+    ArrayStructure slice(Slice... slices);
 
     int lastIndex();
 

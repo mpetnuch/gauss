@@ -23,8 +23,6 @@ package org.mpetnuch.gauss.store;
  * @author Michael Petnuch
  */
 public enum DataFlag {
-    UPDATEIFCOPY,
-    ALIGNED,
-    WRITEABLE,
-    OWNDATA
+    Writable,
+    Contiguous
 }

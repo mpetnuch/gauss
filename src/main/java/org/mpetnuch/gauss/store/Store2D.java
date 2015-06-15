@@ -19,6 +19,8 @@
 
 package org.mpetnuch.gauss.store;
 
+import org.mpetnuch.gauss.structure.Slice;
+
 import java.util.PrimitiveIterator;
 
 /**
@@ -33,6 +35,8 @@ public interface Store2D extends Store {
     int columnCount();
 
     Store2D transpose();
+
+    Store2D slice(Slice row, Slice column);
 
     Store2D slice(int rowStartInclusive, int rowEndExclusive,
                   int columnStartInclusive, int columnEndExclusive);

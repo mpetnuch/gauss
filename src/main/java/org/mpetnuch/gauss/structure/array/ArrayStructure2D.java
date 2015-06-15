@@ -19,7 +19,10 @@
 
 package org.mpetnuch.gauss.structure.array;
 
+import org.mpetnuch.gauss.exception.DimensionMismatchException;
 import org.mpetnuch.gauss.exception.InvalidRangeException;
+import org.mpetnuch.gauss.misc.MathUtils;
+import org.mpetnuch.gauss.structure.Slice;
 import org.mpetnuch.gauss.structure.Structure2D;
 
 /**
@@ -81,18 +84,43 @@ public final class ArrayStructure2D implements ArrayStructure, Structure2D {
                 (rowStride == 1 && columnStride == rowCount);
     }
 
+    public ArrayStructure2D swapAxis(int axis1, int axis2) {
+        if ((axis1 != ROW_DIMENSION && axis1 != COLUMN_DIMENSION) ||
+                (axis2 != ROW_DIMENSION && axis2 != COLUMN_DIMENSION)) {
+            throw new IllegalArgumentException();
+        }
+
+        return transpose();
+    }
+
     @Override
     public ArrayStructure2D transpose() {
         return new ArrayStructure2D(columnCount, columnStride, rowCount, rowStride, offset);
     }
 
-    public ArrayStructure2D slice(int rowStartInclusive, int rowEndExclusive,
-                                  int columnStartInclusive, int columnEndExclusive) {
-        final int rowCount = rowEndExclusive - rowStartInclusive;
-        final int columnCount = columnEndExclusive - columnStartInclusive;
-        final int sliceOffset = offset + rowStride * rowStartInclusive + columnStartInclusive * columnStride;
+    @Override
+    public ArrayStructure2D slice(Slice... slices) {
+        switch (slices.length) {
+            case 2:
+                return slice(slices[0], slices[1]);
+            case 1:
+                return slice(slices[0], Slice.All());
+            default:
+                throw new DimensionMismatchException(2, slices.length);
+        }
+    }
 
-        return new ArrayStructure2D(rowCount, rowStride, columnCount, columnStride, sliceOffset);
+    @Override
+    public ArrayStructure2D slice(Slice rowSlice, Slice columnSlice) {
+        final int rows = rowSlice.stop(rowCount) - rowSlice.start(rowCount);
+        final int rowSliceCount = MathUtils.ceilDiv(rows, rowSlice.step());
+
+        final int columns = columnSlice.stop(columnCount) - columnSlice.start(columnCount);
+        final int columnSliceCount = MathUtils.ceilDiv(columns, columnSlice.step());
+
+        return new ArrayStructure2D(rowSliceCount, rowStride * rowSlice.step(),
+                columnSliceCount, columnStride * columnSlice.step(),
+                index(rowSlice.start(rowSliceCount), columnSlice.start(columnSliceCount)));
     }
 
     @Override

@@ -20,6 +20,7 @@
 package org.mpetnuch.gauss.store.array;
 
 import org.mpetnuch.gauss.store.Store;
+import org.mpetnuch.gauss.structure.Slice;
 import org.mpetnuch.gauss.structure.array.ArrayStructure;
 import org.mpetnuch.gauss.structure.array.spliterator.ArrayStructureSpliterator;
 
@@ -36,6 +37,13 @@ public interface ArrayStore extends Store {
 
     @Override
     ArrayStore reshape(int... dimensions);
+
+    @Override
+    ArrayStore swapAxis(int axis1, int axis2);
+
+    @Override
+    ArrayStore slice(Slice... slices);
+
 
     @Override
     ArrayStructure structure();

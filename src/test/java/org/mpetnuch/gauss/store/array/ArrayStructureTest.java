@@ -24,17 +24,34 @@ import org.mpetnuch.gauss.structure.array.ArrayStructure2D;
 
 import java.util.Arrays;
 
+import static org.mpetnuch.gauss.structure.Slice.All;
+
 /**
  * @author Michael Petnuch
  */
 public class ArrayStructureTest {
-
     @Test
     public void testStructure() {
         final double[] x = new double[]{
-                1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
-                17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32
+                1, 2, 3, 4, 5, 6, 7, 8,
+                9, 10, 11, 12, 13, 14, 15, 16,
+                17, 18, 19, 20, 21, 22, 23, 24,
+                25, 26, 27, 28, 29, 30, 31, 32
         };
+
+        System.out.println();
+        System.out.println();
+        System.out.println();
+        System.out.println();
+        System.out.println();
+
+        final ArrayStructure2D wholeStructure = new ArrayStructure2D(4, 8, 0);
+        final ArrayStore2D wholeStore = new ArrayStore2D(x, wholeStructure);
+        for (double[] row : wholeStore.slice(All(), All(-1)).toArray2D()) {
+            System.out.println(Arrays.toString(row));
+        }
+
+        System.out.println();
 
         final ArrayStructure2D structure = new ArrayStructure2D(2, 16, 8, 2, 0);
         final ArrayStore2D store = new ArrayStore2D(x, structure);
@@ -60,7 +77,7 @@ public class ArrayStructureTest {
         System.out.println();
 
         final ArrayStore2D storeReshape = store.reshape(8, 2);
-        for (double[] row : storeReshape.toArray2D()) {
+        for (double[] row : storeReshape.slice(All(), All(-1)).toArray2D()) {
             System.out.println(Arrays.toString(row));
         }
     }

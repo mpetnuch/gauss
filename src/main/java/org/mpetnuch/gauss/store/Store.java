@@ -19,6 +19,7 @@
 
 package org.mpetnuch.gauss.store;
 
+import org.mpetnuch.gauss.structure.Slice;
 import org.mpetnuch.gauss.structure.Structure;
 
 import java.util.PrimitiveIterator;
@@ -38,11 +39,15 @@ public interface Store extends Iterable<Double> {
 
     double get(int... indices);
 
+    Store swapAxis(int axis1, int axis2);
+
     Store reshape(int... dimensions);
 
     Store1D reshape(int length);
 
     Store2D reshape(int length, int width);
+
+    Store slice(Slice... slices);
 
     Structure structure();
 

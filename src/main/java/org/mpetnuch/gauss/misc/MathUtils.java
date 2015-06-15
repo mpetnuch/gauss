@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2015, Michael Petnuch. All Rights Reserved.
  *
- * This file `Structure.java` is part of Gauss.
+ * This file `MathUtils.java` is part of Gauss.
  *
  * Gauss is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,20 +17,19 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.mpetnuch.gauss.structure;
+package org.mpetnuch.gauss.misc;
 
 /**
  * @author Michael Petnuch
- * @version $Id$
  */
-public interface Structure {
-    Structure swapAxis(int axis1, int axis2);
+public class MathUtils {
+    public static int ceilDiv(int numerator, int denominator) {
+        return (int) Math.ceil((double) numerator / denominator);
+    }
 
-    Structure slice(Slice... slices);
-
-    int dimensionLength(int dimension);
-
-    int dimension();
-
-    int size();
+    public static void swap(int[] array, int i, int j) {
+        int tmp = array[i];
+        array[i] = array[j];
+        array[j] = tmp;
+    }
 }

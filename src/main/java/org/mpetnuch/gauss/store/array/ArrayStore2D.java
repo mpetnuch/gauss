@@ -22,6 +22,7 @@ package org.mpetnuch.gauss.store.array;
 import org.mpetnuch.gauss.exception.DimensionMismatchException;
 import org.mpetnuch.gauss.store.DataFlag;
 import org.mpetnuch.gauss.store.Store2D;
+import org.mpetnuch.gauss.structure.Slice;
 import org.mpetnuch.gauss.structure.array.ArrayStructure1D;
 import org.mpetnuch.gauss.structure.array.ArrayStructure2D;
 import org.mpetnuch.gauss.structure.array.ArrayStructureAnyD;
@@ -33,17 +34,20 @@ import java.util.EnumSet;
 import java.util.Set;
 import java.util.function.DoubleUnaryOperator;
 
+import static org.mpetnuch.gauss.structure.Slice.S;
+
 /**
  * @author Michael Petnuch
  */
 public class ArrayStore2D implements ArrayStore, Store2D {
-    private final Set<DataFlag> flags = EnumSet.noneOf(DataFlag.class);
     private final ArrayStructure2D structure;
+    private final Set<DataFlag> flags;
     private final double[] array;
 
-    public ArrayStore2D(int rowCount, int columnCount) {
+    public ArrayStore2D(int rowCount, int columnCount, DataFlag... flags) {
         this.array = new double[rowCount * columnCount];
         this.structure = new ArrayStructure2D(rowCount, columnCount);
+        this.flags = EnumSet.of(DataFlag.Writable, DataFlag.Contiguous);
     }
 
     public ArrayStore2D(double[] array, ArrayStructure2D structure) {
@@ -53,6 +57,7 @@ public class ArrayStore2D implements ArrayStore, Store2D {
 
         this.array = array;
         this.structure = structure;
+        this.flags = EnumSet.noneOf(DataFlag.class);
     }
 
     @Override
@@ -105,9 +110,20 @@ public class ArrayStore2D implements ArrayStore, Store2D {
     }
 
     @Override
+    public ArrayStore2D slice(Slice... slices) {
+        return new ArrayStore2D(array, structure.slice(slices));
+    }
+
+    @Override
+    public Store2D slice(Slice rowSlice, Slice columnSlice) {
+        return new ArrayStore2D(array, structure.slice(rowSlice, columnSlice));
+    }
+
+    @Override
     public ArrayStore2D slice(int rowStartInclusive, int rowEndExclusive,
                               int columnStartInclusive, int columnEndExclusive) {
-        return new ArrayStore2D(array, structure.slice(rowStartInclusive, rowEndExclusive, columnStartInclusive, columnEndExclusive));
+        return new ArrayStore2D(array,
+                structure.slice(S(rowStartInclusive, rowEndExclusive), S(columnStartInclusive, columnEndExclusive)));
     }
 
     @Override
@@ -189,6 +205,11 @@ public class ArrayStore2D implements ArrayStore, Store2D {
     }
 
     @Override
+    public ArrayStore2D swapAxis(int axis1, int axis2) {
+        return new ArrayStore2D(array, structure.swapAxis(axis1, axis2));
+    }
+
+    @Override
     public ArrayStructureSpliterator spliterator() {
         return new NaturalOrderSpliterator(structure, array);
     }
@@ -198,7 +219,7 @@ public class ArrayStore2D implements ArrayStore, Store2D {
     }
 
     public void increment(int rowIndex, int columnIndex, double x) {
-        if (!flags.contains(DataFlag.WRITEABLE)) {
+        if (!flags.contains(DataFlag.Writable)) {
             throw new IllegalStateException("ArrayStore2D is not writable");
         }
 
@@ -206,7 +227,7 @@ public class ArrayStore2D implements ArrayStore, Store2D {
     }
 
     public void set(int rowIndex, int columnIndex, double x) {
-        if (!flags.contains(DataFlag.WRITEABLE)) {
+        if (!flags.contains(DataFlag.Writable)) {
             throw new IllegalStateException("ArrayStore2D is not writable");
         }
 
@@ -214,7 +235,7 @@ public class ArrayStore2D implements ArrayStore, Store2D {
     }
 
     public void replaceAll(DoubleUnaryOperator operator) {
-        if (!flags.contains(DataFlag.WRITEABLE)) {
+        if (!flags.contains(DataFlag.Writable)) {
             throw new IllegalStateException("ArrayStore2D is not writable");
         }
 

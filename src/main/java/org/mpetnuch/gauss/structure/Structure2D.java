@@ -28,6 +28,8 @@ public interface Structure2D extends Structure {
     int ROW_DIMENSION = 0;
     int COLUMN_DIMENSION = 1;
 
+    Structure2D slice(Slice rowSlice, Slice columnSlice);
+
     Structure2D transpose();
 
     Structure1D column(int columnIndex);

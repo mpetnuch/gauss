@@ -19,8 +19,14 @@
 
 package org.mpetnuch.gauss.structure.array;
 
+import org.mpetnuch.gauss.exception.DimensionMismatchException;
+import org.mpetnuch.gauss.misc.MathUtils;
+import org.mpetnuch.gauss.structure.Slice;
+
 import java.util.Arrays;
 import java.util.stream.IntStream;
+
+import static org.mpetnuch.gauss.structure.Slice.All;
 
 /**
  * @author Michael Petnuch
@@ -149,6 +155,48 @@ public class ArrayStructureAnyD implements ArrayStructure {
         }
 
         return position;
+    }
+
+    public ArrayStructureAnyD swapAxis(int axis1, int axis2) {
+        if (axis1 >= dimension || axis2 >= dimension) {
+            throw new IllegalArgumentException();
+        }
+
+        if (axis1 == axis2) {
+            return this;
+        }
+
+        final int[] swappedDimensions = dimensions.clone();
+        MathUtils.swap(swappedDimensions, axis1, axis2);
+
+        final int[] swappedStrides = strides.clone();
+        MathUtils.swap(swappedStrides, axis1, axis2);
+
+        return new ArrayStructureAnyD(swappedDimensions, swappedStrides, offset);
+    }
+
+    @Override
+    public ArrayStructure slice(Slice... slices) {
+        if (slices.length > dimension) {
+            throw new DimensionMismatchException(dimension, slices.length);
+        }
+
+        final int[] sliceIndices = new int[dimension];
+        final int[] sliceStrides = new int[dimension];
+        final int[] sliceDimensions = new int[dimension];
+
+        for (int i = 0; i < dimension; i++) {
+            // If a slice is not provided for a dimension then assume All();
+            final Slice slice = i < slices.length ? slices[i] : All();
+            final int length = dimensionLength(i);
+            final int width = slice.stop(length) - slice.start(length);
+
+            sliceIndices[i] = slice.start(length);
+            sliceStrides[i] = strides[i] * slice.step();
+            sliceDimensions[i] = MathUtils.ceilDiv(width, slice.step());
+        }
+
+        return new ArrayStructureAnyD(sliceDimensions, sliceStrides, index(sliceIndices));
     }
 
     @Override

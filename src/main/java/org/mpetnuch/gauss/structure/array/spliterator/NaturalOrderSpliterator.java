@@ -25,11 +25,10 @@ import org.mpetnuch.gauss.structure.array.ArrayStructure;
  * @author Michael Petnuch
  */
 public final class NaturalOrderSpliterator extends AbstractArrayStructureSpliterator<ArrayStructure> {
-    private final int[] indices;
+    private int[] indices;
 
     public NaturalOrderSpliterator(ArrayStructure structure, double[] array) {
         super(structure, array);
-
         this.indices = new int[structure.dimension()];
     }
 
@@ -41,15 +40,16 @@ public final class NaturalOrderSpliterator extends AbstractArrayStructureSpliter
     @Override
     public OfDouble trySplit() {
         final int lo = index, mid = (lo + fence) >>> 1;
-        if (lo < mid) {
-            // update the current spliterators index and indices to reflect that it has been split in half
-            System.arraycopy(structure.indices(index = mid), 0, indices, 0, indices.length);
-
-            return new NaturalOrderSpliterator(structure, array, lo, mid);
-        } else {
+        if (lo >= mid) {
             // can't split any more
             return null;
         }
+
+        // update the current spliterators index and indices to reflect
+        // that it has been split in half
+        indices = structure.indices(index = mid);
+
+        return new NaturalOrderSpliterator(structure, array, lo, mid);
     }
 
     @Override

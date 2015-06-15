@@ -20,6 +20,7 @@
 package org.mpetnuch.gauss.store.array;
 
 import org.mpetnuch.gauss.store.DataFlag;
+import org.mpetnuch.gauss.structure.Slice;
 import org.mpetnuch.gauss.structure.array.ArrayStructure;
 import org.mpetnuch.gauss.structure.array.ArrayStructure1D;
 import org.mpetnuch.gauss.structure.array.ArrayStructure2D;
@@ -80,6 +81,16 @@ public class ArrayStoreAnyD implements ArrayStore {
         }
 
         return new ArrayStoreAnyD(toArray(), new ArrayStructureAnyD(dimensions));
+    }
+
+    @Override
+    public ArrayStoreAnyD slice(Slice... slices) {
+        return new ArrayStoreAnyD(array, structure.slice(slices));
+    }
+
+    @Override
+    public ArrayStoreAnyD swapAxis(int axis1, int axis2) {
+        return new ArrayStoreAnyD(array, structure.swapAxis(axis1, axis2));
     }
 
     @Override
