@@ -189,7 +189,7 @@ public class ArrayStructureAnyD implements ArrayStructure {
             // If a slice is not provided for a dimension then assume All();
             final Slice slice = i < slices.length ? slices[i] : All();
             final int length = dimensionLength(i);
-            final int width = slice.stop(length) - slice.start(length);
+            final int width = Math.max(0, slice.stop(length) - slice.start(length));
 
             sliceIndices[i] = slice.start(length);
             sliceStrides[i] = strides[i] * slice.step();

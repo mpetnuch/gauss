@@ -27,6 +27,7 @@ import org.mpetnuch.gauss.structure.Structure1D;
 import java.util.Arrays;
 
 import static org.mpetnuch.gauss.misc.MathUtils.ceilDiv;
+import static org.mpetnuch.gauss.structure.Slice.S;
 
 /**
  * @author Michael Petnuch
@@ -186,15 +187,12 @@ public class ArrayStructure1D implements ArrayStructure, Structure1D {
 
     @Override
     public ArrayStructure1D slice(Slice slice) {
-        final int sliceLength = ceilDiv(slice.stop(length) - slice.start(length), slice.step());
+        final int width = ceilDiv(slice.stop(length) - slice.start(length), slice.step());
+        final int sliceLength = Math.max(0, width);
         return new ArrayStructure1D(sliceLength, stride * slice.step(), index(slice.start(length)));
     }
 
     public ArrayStructure1D slice(int startInclusive, int endExclusive) {
-        if (size() < endExclusive - startInclusive) {
-            throw new InvalidRangeException(endExclusive - startInclusive, 0, length);
-        }
-
-        return new ArrayStructure1D(endExclusive - startInclusive, stride, index(startInclusive));
+        return slice(S(startInclusive, endExclusive));
     }
 }
