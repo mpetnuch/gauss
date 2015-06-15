@@ -40,7 +40,9 @@ public abstract class AbstractArrayStructureSpliterator<Structure extends ArrayS
         this.fence = fence;
         this.index = index;
         this.structure = structure;
-        this.arrayIndex = structure.index(index);
+
+        // need to double check that the structure isn't empty before asking for the index
+        this.arrayIndex = structure.size() > 0 ? structure.index(index) : -1;
     }
 
     protected AbstractArrayStructureSpliterator(Structure structure, double[] array) {

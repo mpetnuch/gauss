@@ -25,6 +25,7 @@ import org.mpetnuch.gauss.structure.array.ArrayStructure2D;
 import java.util.Arrays;
 
 import static org.mpetnuch.gauss.structure.Slice.All;
+import static org.mpetnuch.gauss.structure.Slice.S;
 
 /**
  * @author Michael Petnuch
@@ -47,9 +48,10 @@ public class ArrayStructureTest {
 
         final ArrayStructure2D wholeStructure = new ArrayStructure2D(4, 8, 0);
         final ArrayStore2D wholeStore = new ArrayStore2D(x, wholeStructure);
-        for (double[] row : wholeStore.slice(All(), All(-1)).toArray2D()) {
+        for (double[] row : wholeStore.slice(All(), S(0, 8, -1)).toArray2D()) {
             System.out.println(Arrays.toString(row));
         }
+
 
         System.out.println();
 

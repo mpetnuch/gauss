@@ -21,9 +21,10 @@ package org.mpetnuch.gauss.structure.array;
 
 import org.mpetnuch.gauss.exception.DimensionMismatchException;
 import org.mpetnuch.gauss.exception.InvalidRangeException;
-import org.mpetnuch.gauss.misc.MathUtils;
 import org.mpetnuch.gauss.structure.Slice;
 import org.mpetnuch.gauss.structure.Structure2D;
+
+import static org.mpetnuch.gauss.misc.MathUtils.ceilDiv;
 
 /**
  * @author Michael Petnuch
@@ -113,10 +114,10 @@ public final class ArrayStructure2D implements ArrayStructure, Structure2D {
     @Override
     public ArrayStructure2D slice(Slice rowSlice, Slice columnSlice) {
         final int rows = rowSlice.stop(rowCount) - rowSlice.start(rowCount);
-        final int rowSliceCount = MathUtils.ceilDiv(rows, rowSlice.step());
+        final int rowSliceCount = Math.max(0, ceilDiv(rows, rowSlice.step()));
 
         final int columns = columnSlice.stop(columnCount) - columnSlice.start(columnCount);
-        final int columnSliceCount = MathUtils.ceilDiv(columns, columnSlice.step());
+        final int columnSliceCount = Math.max(0, ceilDiv(columns, columnSlice.step()));
 
         return new ArrayStructure2D(rowSliceCount, rowStride * rowSlice.step(),
                 columnSliceCount, columnStride * columnSlice.step(),
