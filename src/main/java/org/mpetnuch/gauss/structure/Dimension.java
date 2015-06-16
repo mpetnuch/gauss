@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2015, Michael Petnuch. All Rights Reserved.
  *
- * This file `InvalidRangeException.java` is part of Gauss.
+ * This file `Dimension.java` is part of Gauss.
  *
  * Gauss is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,27 +17,19 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.mpetnuch.gauss.exception;
-
-import java.text.MessageFormat;
+package org.mpetnuch.gauss.structure;
 
 /**
  * @author Michael Petnuch
  */
-public class InvalidRangeException extends IllegalArgumentException {
-    private static final long serialVersionUID = -8798552081345525331L;
+public interface Dimension {
+    int dimensionIndex();
 
-    private final Number argument;
-    private final Number lowerBound, upperBound;
+    int length();
 
-    public InvalidRangeException(Number argument, Number lowerBound, Number upperBound) {
-        this.argument = argument;
-        this.upperBound = upperBound;
-        this.lowerBound = lowerBound;
-    }
+    int index(int i, boolean isBound);
 
-    @Override
-    public String getMessage() {
-        return MessageFormat.format("{0} out of [{1}, {2}] range", argument, lowerBound, upperBound);
+    default int index(int i) {
+        return index(i, false);
     }
 }

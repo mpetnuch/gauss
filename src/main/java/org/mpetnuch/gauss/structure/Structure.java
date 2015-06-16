@@ -19,18 +19,63 @@
 
 package org.mpetnuch.gauss.structure;
 
+import org.mpetnuch.gauss.exception.InvalidDimensionIndexException;
+import org.mpetnuch.gauss.exception.InvalidRangeException;
+
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
 /**
  * @author Michael Petnuch
  * @version $Id$
  */
 public interface Structure {
-    Structure swapAxis(int axis1, int axis2);
-
-    Structure slice(Slice... slices);
-
-    int dimensionLength(int dimension);
+    int size();
 
     int dimension();
 
-    int size();
+    int dimensionLength(int dimension);
+
+    default int[] shape() {
+        return dimensions().mapToInt(Dimension::length).toArray();
+    }
+
+    default Dimension dimension(final int dimension) {
+        if (dimension < 0 || dimension > dimension()) {
+            throw new InvalidRangeException(dimension, 0, dimension());
+        }
+
+        return new Dimension() {
+            @Override
+            public int dimensionIndex() {
+                return dimension;
+            }
+
+            @Override
+            public int length() {
+                return dimensionLength(dimension);
+            }
+
+            @Override
+            public int index(final int position, boolean isBound) {
+                final int length = length();
+                final int index = position < 0 ? position + length : position;
+                if (index < length) {
+                    return index;
+                } else if (isBound && index == length) {
+                    return index;
+                }
+
+                throw new InvalidDimensionIndexException(position, dimension, length);
+            }
+        };
+    }
+
+    default Stream<Dimension> dimensions() {
+        return IntStream.range(0, dimension()).mapToObj(this::dimension);
+    }
+
+    Structure swapAxis(int axis1, int axis2);
+
+    Structure slice(Slice... slices);
 }

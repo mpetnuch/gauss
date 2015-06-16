@@ -20,6 +20,7 @@
 package org.mpetnuch.gauss.store.array;
 
 import org.mpetnuch.gauss.exception.DimensionMismatchException;
+import org.mpetnuch.gauss.exception.InvalidShapeException;
 import org.mpetnuch.gauss.store.DataFlag;
 import org.mpetnuch.gauss.store.Store2D;
 import org.mpetnuch.gauss.structure.Slice;
@@ -129,7 +130,7 @@ public class ArrayStore2D implements ArrayStore, Store2D {
     @Override
     public ArrayStore1D reshape(int length) {
         if (size() != length) {
-            throw new DimensionMismatchException(size(), length);
+            throw new DimensionMismatchException(length, size());
         }
 
         final int offset = structure.offset();
@@ -150,7 +151,7 @@ public class ArrayStore2D implements ArrayStore, Store2D {
     @Override
     public ArrayStore2D reshape(int rowCount, int columnCount) {
         if (size() != rowCount * columnCount) {
-            throw new DimensionMismatchException(size(), rowCount);
+            throw new InvalidShapeException(new int[]{rowCount, columnCount}, new int[]{rowCount(), columnCount()});
         }
 
         final int rowStride = structure.rowStride();

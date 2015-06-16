@@ -28,7 +28,6 @@ import org.mpetnuch.gauss.structure.Structure;
  */
 public interface ArrayStructure extends Structure {
     int NO_UNIT_STRIDE_DIMENSION = 1;
-
     @Override
     ArrayStructure swapAxis(int axis1, int axis2);
 

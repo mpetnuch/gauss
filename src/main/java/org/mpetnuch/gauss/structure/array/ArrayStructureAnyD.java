@@ -20,6 +20,7 @@
 package org.mpetnuch.gauss.structure.array;
 
 import org.mpetnuch.gauss.exception.DimensionMismatchException;
+import org.mpetnuch.gauss.exception.InvalidRangeException;
 import org.mpetnuch.gauss.misc.MathUtils;
 import org.mpetnuch.gauss.structure.Slice;
 
@@ -41,7 +42,7 @@ public class ArrayStructureAnyD implements ArrayStructure {
     private final int[] dimensions, strides, backstrides, factors;
 
     public ArrayStructureAnyD(int[] dimensions) {
-        this(dimensions, null, 0);
+        this(dimensions, computeFactors(dimensions), 0);
     }
 
     public ArrayStructureAnyD(int[] dimensions, int[] strides, int offset) {
@@ -58,9 +59,9 @@ public class ArrayStructureAnyD implements ArrayStructure {
         final int[] dimensionm1 = Arrays.stream(dimensions).
                 map(n -> n - 1).toArray();
 
-        this.backstrides = product(strides, dimensionm1).toArray();
+        this.backstrides = MathUtils.product(strides, dimensionm1).toArray();
 
-        this.lastIndex = offset + product(dimensionm1, strides).sum();
+        this.lastIndex = offset + MathUtils.product(dimensionm1, strides).sum();
 
         this.unitStrideDimension = IntStream.range(0, dimension).
                 filter(value -> strides[value] == 1).
@@ -101,17 +102,13 @@ public class ArrayStructureAnyD implements ArrayStructure {
         return factors;
     }
 
-    private static IntStream product(int[] a, int[] b) {
-        if (a.length != b.length) {
-            throw new IllegalArgumentException();
-        }
-
-        return IntStream.range(0, a.length).map(n -> a[n] * b[n]);
-    }
-
     @Override
     public int index(int... indices) {
-        return offset + product(indices, strides).sum();
+        if (indices.length != dimension) {
+            throw new DimensionMismatchException(indices.length, dimension);
+        }
+
+        return offset + MathUtils.product(indices, strides).sum();
     }
 
     @Override
@@ -119,7 +116,12 @@ public class ArrayStructureAnyD implements ArrayStructure {
         return lastIndex;
     }
 
-    public int[] indices(int ordinal) {
+    public int[] indices(int relativeOrdinal) {
+        final int ordinal = relativeOrdinal < 0 ? relativeOrdinal + size : relativeOrdinal;
+        if (ordinal >= size) {
+            throw new InvalidRangeException(relativeOrdinal, 0, size);
+        }
+
         final int[] indices = new int[dimension];
 
         indices[0] = ordinal;
@@ -135,15 +137,23 @@ public class ArrayStructureAnyD implements ArrayStructure {
     }
 
     @Override
-    public int ordinal(int[] indices) {
+    public int ordinal(int... indices) {
+        if (indices.length != dimension) {
+            throw new DimensionMismatchException(indices.length, dimension);
+        }
+
         return IntStream.range(0, dimension).
                 reduce(0, (sum, i) -> sum + indices[i] * factors[i]);
     }
 
     @Override
-    public int index(int ordinal) {
-        final int[] l = new int[dimension];
+    public int index(int relativeOrdinal) {
+        final int ordinal = relativeOrdinal < 0 ? relativeOrdinal + size : relativeOrdinal;
+        if (ordinal >= size) {
+            throw new InvalidRangeException(relativeOrdinal, 0, size);
+        }
 
+        final int[] l = new int[dimension];
         l[0] = ordinal;
         for (int i = 1; i < dimension; i++) {
             l[i] = l[i - 1] % factors[i - 1];
@@ -158,19 +168,17 @@ public class ArrayStructureAnyD implements ArrayStructure {
     }
 
     public ArrayStructureAnyD swapAxis(int axis1, int axis2) {
-        if (axis1 >= dimension || axis2 >= dimension) {
-            throw new IllegalArgumentException();
-        }
-
-        if (axis1 == axis2) {
+        final int axis1DimensionIndex = dimension(axis1).dimensionIndex();
+        final int axis2DimensionIndex = dimension(axis2).dimensionIndex();
+        if (axis1DimensionIndex == axis2DimensionIndex) {
             return this;
         }
 
         final int[] swappedDimensions = dimensions.clone();
-        MathUtils.swap(swappedDimensions, axis1, axis2);
+        MathUtils.swap(swappedDimensions, axis1DimensionIndex, axis2DimensionIndex);
 
         final int[] swappedStrides = strides.clone();
-        MathUtils.swap(swappedStrides, axis1, axis2);
+        MathUtils.swap(swappedStrides, axis1DimensionIndex, axis1DimensionIndex);
 
         return new ArrayStructureAnyD(swappedDimensions, swappedStrides, offset);
     }
@@ -178,23 +186,23 @@ public class ArrayStructureAnyD implements ArrayStructure {
     @Override
     public ArrayStructure slice(Slice... slices) {
         if (slices.length > dimension) {
-            throw new DimensionMismatchException(dimension, slices.length);
+            throw new DimensionMismatchException(slices.length, dimension);
         }
 
         final int[] sliceIndices = new int[dimension];
         final int[] sliceStrides = new int[dimension];
         final int[] sliceDimensions = new int[dimension];
 
-        for (int i = 0; i < dimension; i++) {
+        dimensions().forEach(dim -> {
+            final int dimensionIndex = dim.dimensionIndex();
             // If a slice is not provided for a dimension then assume All();
-            final Slice slice = i < slices.length ? slices[i] : All();
-            final int length = dimensionLength(i);
-            final int width = Math.max(0, slice.stop(length) - slice.start(length));
+            final Slice slice = dimensionIndex < slices.length ? slices[dimensionIndex] : All();
+            final int width = Math.max(0, slice.stop(dim) - slice.start(dim));
 
-            sliceIndices[i] = slice.start(length);
-            sliceStrides[i] = strides[i] * slice.step();
-            sliceDimensions[i] = MathUtils.ceilDiv(width, slice.step());
-        }
+            sliceIndices[dimensionIndex] = slice.start(dim);
+            sliceStrides[dimensionIndex] = strides[dimensionIndex] * slice.step();
+            sliceDimensions[dimensionIndex] = MathUtils.ceilDiv(width, slice.step());
+        });
 
         return new ArrayStructureAnyD(sliceDimensions, sliceStrides, index(sliceIndices));
     }
@@ -206,12 +214,12 @@ public class ArrayStructureAnyD implements ArrayStructure {
 
     @Override
     public int stride(int dimension) {
-        return strides[dimension];
+        return strides[dimension(dimension).dimensionIndex()];
     }
 
     @Override
     public int backstride(int dimension) {
-        return backstrides[dimension];
+        return backstrides[dimension(dimension).dimensionIndex()];
     }
 
     @Override
@@ -231,7 +239,7 @@ public class ArrayStructureAnyD implements ArrayStructure {
 
     @Override
     public int dimensionLength(int dimension) {
-        return dimensions[dimension];
+        return dimensions[dimension(dimension).dimensionIndex()];
     }
 
     @Override

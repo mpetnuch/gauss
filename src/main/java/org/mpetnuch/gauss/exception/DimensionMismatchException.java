@@ -27,12 +27,12 @@ public class DimensionMismatchException extends IllegalArgumentException {
     private final Integer[] expected;
     private final Integer[] actual;
 
-    public DimensionMismatchException(Integer expected, Integer actual) {
+    public DimensionMismatchException(Integer actual, Integer expected) {
         this.expected = new Integer[]{expected};
         this.actual = new Integer[]{actual};
     }
 
-    public DimensionMismatchException(Integer[] expected, Integer[] actual) {
+    public DimensionMismatchException(Integer[] actual, Integer[] expected) {
         this.expected = expected;
         this.actual = actual;
     }

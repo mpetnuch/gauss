@@ -21,12 +21,13 @@ package org.mpetnuch.gauss.structure.array;
 
 import org.mpetnuch.gauss.exception.DimensionMismatchException;
 import org.mpetnuch.gauss.exception.InvalidRangeException;
+import org.mpetnuch.gauss.misc.MathUtils;
+import org.mpetnuch.gauss.structure.Dimension;
 import org.mpetnuch.gauss.structure.Slice;
 import org.mpetnuch.gauss.structure.Structure1D;
 
 import java.util.Arrays;
 
-import static org.mpetnuch.gauss.misc.MathUtils.ceilDiv;
 import static org.mpetnuch.gauss.structure.Slice.S;
 
 /**
@@ -61,9 +62,10 @@ public class ArrayStructure1D implements ArrayStructure, Structure1D {
     }
 
     @Override
-    public int[] indices(int ordinal) {
+    public int[] indices(int relativeOrdinal) {
+        final int ordinal = relativeOrdinal < 0 ? relativeOrdinal + length : relativeOrdinal;
         if (ordinal >= length) {
-            throw new InvalidRangeException(ordinal, 0, ordinal - 1);
+            throw new InvalidRangeException(relativeOrdinal, 0, length - 1);
         }
 
         return new int[]{ordinal};
@@ -79,8 +81,8 @@ public class ArrayStructure1D implements ArrayStructure, Structure1D {
     }
 
     @Override
-    public int index(int index) {
-        return offset + index * stride;
+    public int index(int relativeIndex) {
+        return offset + dimension(0).index(relativeIndex) * stride;
     }
 
     @Override
@@ -137,7 +139,7 @@ public class ArrayStructure1D implements ArrayStructure, Structure1D {
 
         final int size = Arrays.stream(dimensions).reduce(0, (product, n) -> product * n);
         if (size() != size) {
-            throw new DimensionMismatchException(size(), size);
+            throw new DimensionMismatchException(size, size());
         }
 
         final int n = dimensions.length;
@@ -154,7 +156,7 @@ public class ArrayStructure1D implements ArrayStructure, Structure1D {
     public ArrayStructure2D reshape(int rowCount, int columnCount) {
         final int size = rowCount * columnCount;
         if (size() != size) {
-            throw new DimensionMismatchException(size(), size);
+            throw new DimensionMismatchException(size, size());
         }
 
         return new ArrayStructure2D(rowCount, stride * columnCount, columnCount, stride, offset);
@@ -162,18 +164,20 @@ public class ArrayStructure1D implements ArrayStructure, Structure1D {
 
     public ArrayStructure1D reshape(int length) {
         if (length != length()) {
-            throw new DimensionMismatchException(length(), length);
+            throw new DimensionMismatchException(length, length());
         }
 
         return this;
     }
 
     public ArrayStructure1D swapAxis(int axis1, int axis2) {
-        if (axis1 != 0 || axis2 != 0) {
-            throw new IllegalArgumentException();
+        final int axis1DimensionIndex = dimension(axis1).dimensionIndex();
+        final int axis2DimensionIndex = dimension(axis2).dimensionIndex();
+        if (axis1DimensionIndex == axis2DimensionIndex) {
+            return this;
         }
 
-        return this;
+        throw new IllegalArgumentException();
     }
 
     @Override
@@ -182,14 +186,19 @@ public class ArrayStructure1D implements ArrayStructure, Structure1D {
             return slice(slices[0]);
         }
 
-        throw new DimensionMismatchException(1, slices.length);
+        throw new DimensionMismatchException(slices.length, 1);
     }
 
     @Override
     public ArrayStructure1D slice(Slice slice) {
-        final int width = ceilDiv(slice.stop(length) - slice.start(length), slice.step());
-        final int sliceLength = Math.max(0, width);
-        return new ArrayStructure1D(sliceLength, stride * slice.step(), index(slice.start(length)));
+        final Dimension dim = dimension(0);
+        final int width = Math.max(0, slice.stop(dim) - slice.start(dim));
+
+        final int sliceIndex = slice.start(dim);
+        final int sliceStride = stride * slice.step();
+        final int sliceDimension = MathUtils.ceilDiv(width, slice.step());
+
+        return new ArrayStructure1D(sliceDimension, sliceStride, index(sliceIndex));
     }
 
     public ArrayStructure1D slice(int startInclusive, int endExclusive) {

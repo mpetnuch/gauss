@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2015, Michael Petnuch. All Rights Reserved.
  *
- * This file `InvalidRangeException.java` is part of Gauss.
+ * This file `InvalidShapeException.java` is part of Gauss.
  *
  * Gauss is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,24 +20,32 @@
 package org.mpetnuch.gauss.exception;
 
 import java.text.MessageFormat;
+import java.util.Arrays;
 
 /**
  * @author Michael Petnuch
  */
-public class InvalidRangeException extends IllegalArgumentException {
-    private static final long serialVersionUID = -8798552081345525331L;
+public class InvalidShapeException extends IllegalArgumentException {
+    private static final long serialVersionUID = -5075373805864191622L;
 
-    private final Number argument;
-    private final Number lowerBound, upperBound;
+    private final int[] desired;
+    private final int[] current;
 
-    public InvalidRangeException(Number argument, Number lowerBound, Number upperBound) {
-        this.argument = argument;
-        this.upperBound = upperBound;
-        this.lowerBound = lowerBound;
+    public InvalidShapeException(int desired, int current) {
+        this.desired = new int[]{desired};
+        this.current = new int[]{current};
     }
+
+    public InvalidShapeException(int[] desired, int[] current) {
+        this.desired = desired;
+        this.current = current;
+    }
+    //ValueError: total size of new array must be unchanged
 
     @Override
     public String getMessage() {
-        return MessageFormat.format("{0} out of [{1}, {2}] range", argument, lowerBound, upperBound);
+        return MessageFormat.format(
+                "desired shape {0} incompatible with current shape {1}",
+                Arrays.toString(desired), Arrays.toString(current));
     }
 }

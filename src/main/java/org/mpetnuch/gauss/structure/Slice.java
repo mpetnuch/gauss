@@ -41,9 +41,9 @@ public abstract class Slice {
         return new Range(start, stop, step);
     }
 
-    public abstract int start(int dimensionLength);
+    public abstract int start(Dimension dimension);
 
-    public abstract int stop(int dimensionLength);
+    public abstract int stop(Dimension dimension);
 
     public abstract int step();
 
@@ -56,12 +56,16 @@ public abstract class Slice {
             this.step = step;
         }
 
-        public int start(int dimensionLength) {
-            return start >= 0 ? start : start + dimensionLength;
+        public int start(Dimension dimension) {
+            return dimension.index(start);
         }
 
-        public int stop(int dimensionLength) {
-            return stop >= 0 ? stop : stop + dimensionLength + 1;
+        public int stop(Dimension dimension) {
+            if (stop != 0) {
+                return dimension.index(stop, true);
+            } else {
+                return 0;
+            }
         }
 
         public int step() {
@@ -77,15 +81,15 @@ public abstract class Slice {
         }
 
         @Override
-        public int start(int dimensionLength) {
-            return step > 0 ? 0 : dimensionLength - 1;
+        public int start(Dimension dimension) {
+            return step > 0 ? 0 : dimension.length() - 1;
         }
 
         @Override
-        public int stop(int dimensionLength) {
+        public int stop(Dimension dimension) {
             // we need to set stop to be -1 when we have a negative step as we need
             // to include zero as the stop
-            return step > 0 ? dimensionLength : -1;
+            return step > 0 ? dimension.length() : -1;
         }
 
         @Override

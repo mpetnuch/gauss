@@ -19,6 +19,8 @@
 
 package org.mpetnuch.gauss.store.array;
 
+import org.mpetnuch.gauss.exception.InvalidShapeException;
+import org.mpetnuch.gauss.misc.MathUtils;
 import org.mpetnuch.gauss.store.DataFlag;
 import org.mpetnuch.gauss.structure.Slice;
 import org.mpetnuch.gauss.structure.array.ArrayStructure;
@@ -73,6 +75,10 @@ public class ArrayStoreAnyD implements ArrayStore {
 
     @Override
     public ArrayStore reshape(int... dimensions) {
+        if (MathUtils.product(dimensions) != size()) {
+            throw new InvalidShapeException(dimensions, structure.shape());
+        }
+
         switch (dimensions.length) {
             case 2:
                 return reshape(dimensions[0], dimensions[1]);

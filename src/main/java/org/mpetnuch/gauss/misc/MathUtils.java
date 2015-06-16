@@ -19,6 +19,9 @@
 
 package org.mpetnuch.gauss.misc;
 
+import java.util.Arrays;
+import java.util.stream.IntStream;
+
 /**
  * @author Michael Petnuch
  */
@@ -31,5 +34,17 @@ public class MathUtils {
         int tmp = array[i];
         array[i] = array[j];
         array[j] = tmp;
+    }
+
+    public static int product(int[] a) {
+        return Arrays.stream(a).reduce(1, (product, x) -> product * x);
+    }
+
+    public static IntStream product(int[] a, int[] b) {
+        if (a.length != b.length) {
+            throw new IllegalArgumentException();
+        }
+
+        return IntStream.range(0, a.length).map(n -> a[n] * b[n]);
     }
 }

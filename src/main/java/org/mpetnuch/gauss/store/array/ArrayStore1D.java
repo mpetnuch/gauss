@@ -19,7 +19,7 @@
 
 package org.mpetnuch.gauss.store.array;
 
-import org.mpetnuch.gauss.exception.DimensionMismatchException;
+import org.mpetnuch.gauss.exception.InvalidShapeException;
 import org.mpetnuch.gauss.store.DataFlag;
 import org.mpetnuch.gauss.store.Store1D;
 import org.mpetnuch.gauss.structure.Slice;
@@ -94,7 +94,7 @@ public class ArrayStore1D implements ArrayStore, Store1D {
             return this;
         }
 
-        throw new DimensionMismatchException(length(), length);
+        throw new InvalidShapeException(length, length());
     }
 
     @Override

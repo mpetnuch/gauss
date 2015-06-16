@@ -21,10 +21,10 @@ package org.mpetnuch.gauss.structure.array;
 
 import org.mpetnuch.gauss.exception.DimensionMismatchException;
 import org.mpetnuch.gauss.exception.InvalidRangeException;
+import org.mpetnuch.gauss.misc.MathUtils;
+import org.mpetnuch.gauss.structure.Dimension;
 import org.mpetnuch.gauss.structure.Slice;
 import org.mpetnuch.gauss.structure.Structure2D;
-
-import static org.mpetnuch.gauss.misc.MathUtils.ceilDiv;
 
 /**
  * @author Michael Petnuch
@@ -86,12 +86,13 @@ public final class ArrayStructure2D implements ArrayStructure, Structure2D {
     }
 
     public ArrayStructure2D swapAxis(int axis1, int axis2) {
-        if ((axis1 != ROW_DIMENSION && axis1 != COLUMN_DIMENSION) ||
-                (axis2 != ROW_DIMENSION && axis2 != COLUMN_DIMENSION)) {
-            throw new IllegalArgumentException();
+        final int axis1DimensionIndex = dimension(axis1).dimensionIndex();
+        final int axis2DimensionIndex = dimension(axis2).dimensionIndex();
+        if (axis1DimensionIndex == axis2DimensionIndex) {
+            return this;
+        } else {
+            return transpose();
         }
-
-        return transpose();
     }
 
     @Override
@@ -107,41 +108,57 @@ public final class ArrayStructure2D implements ArrayStructure, Structure2D {
             case 1:
                 return slice(slices[0], Slice.All());
             default:
-                throw new DimensionMismatchException(2, slices.length);
+                throw new DimensionMismatchException(slices.length, 2);
         }
     }
 
     @Override
     public ArrayStructure2D slice(Slice rowSlice, Slice columnSlice) {
-        final int rows = rowSlice.stop(rowCount) - rowSlice.start(rowCount);
-        final int rowSliceCount = Math.max(0, ceilDiv(rows, rowSlice.step()));
+        final Dimension rowDimension = dimension(ROW_DIMENSION);
+        final int rowWidth = Math.max(0, rowSlice.stop(rowDimension) - rowSlice.start(rowDimension));
 
-        final int columns = columnSlice.stop(columnCount) - columnSlice.start(columnCount);
-        final int columnSliceCount = Math.max(0, ceilDiv(columns, columnSlice.step()));
+        final int rowSliceIndex = rowSlice.start(rowDimension);
+        final int rowSliceStride = rowStride * rowSlice.step();
+        final int rowSliceDimension = MathUtils.ceilDiv(rowWidth, rowSlice.step());
 
-        return new ArrayStructure2D(rowSliceCount, rowStride * rowSlice.step(),
-                columnSliceCount, columnStride * columnSlice.step(),
-                index(rowSlice.start(rowSliceCount), columnSlice.start(columnSliceCount)));
+        final Dimension columnDimension = dimension(COLUMN_DIMENSION);
+        final int columnWidth = Math.max(0, columnSlice.stop(columnDimension) - columnSlice.start(columnDimension));
+
+        final int columnSliceIndex = columnSlice.start(columnDimension);
+        final int columnSliceStride = columnStride * columnSlice.step();
+        final int columnSliceDimension = MathUtils.ceilDiv(columnWidth, columnSlice.step());
+
+        return new ArrayStructure2D(rowSliceDimension, rowSliceStride,
+                columnSliceDimension, columnSliceStride,
+                index(rowSliceIndex, columnSliceIndex));
     }
 
     @Override
     public ArrayStructure1D row(int rowIndex) {
-        return new ArrayStructure1D(columnCount, columnStride, offset + rowStride * rowIndex);
+        return new ArrayStructure1D(columnCount, columnStride,
+                offset + rowStride * dimension(ROW_DIMENSION).index(rowIndex));
     }
 
     @Override
     public ArrayStructure1D column(int columnIndex) {
-        return new ArrayStructure1D(rowCount, rowStride, offset + columnIndex * columnStride);
+        return new ArrayStructure1D(rowCount, rowStride,
+                offset + columnStride * dimension(COLUMN_DIMENSION).index(columnIndex));
     }
 
     @Override
-    public int index(int ordinal) {
+    public int index(int relativeOrdinal) {
+        final int ordinal = relativeOrdinal < 0 ? relativeOrdinal + size : relativeOrdinal;
+        if (ordinal >= size) {
+            throw new InvalidRangeException(relativeOrdinal, 0, size);
+        }
+
         return offset + Math.floorDiv(ordinal, columnCount) * rowStride +
                 (ordinal % columnCount) * columnStride;
     }
 
     public int index(int rowIndex, int columnIndex) {
-        return offset + rowIndex * rowStride + columnIndex * columnStride;
+        return dimension(ROW_DIMENSION).index(rowIndex) * rowStride +
+                dimension(COLUMN_DIMENSION).index(columnIndex) * columnStride + offset;
     }
 
     @Override
@@ -174,13 +191,13 @@ public final class ArrayStructure2D implements ArrayStructure, Structure2D {
 
     @Override
     public int backstride(int dimension) {
-        switch (dimension) {
+        switch (dimension(dimension).dimensionIndex()) {
             case ROW_DIMENSION:
                 return (rowCount - 1) * rowStride;
             case COLUMN_DIMENSION:
                 return (columnCount - 1) * columnStride;
             default:
-                throw new InvalidRangeException(dimension, 0, 2);
+                throw new InvalidRangeException(dimension, 0, 1);
         }
     }
 

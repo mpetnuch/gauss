@@ -44,7 +44,6 @@ public interface ArrayStore extends Store {
     @Override
     ArrayStore slice(Slice... slices);
 
-
     @Override
     ArrayStructure structure();
 
