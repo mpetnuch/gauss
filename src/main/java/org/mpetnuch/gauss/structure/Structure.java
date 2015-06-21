@@ -57,12 +57,10 @@ public interface Structure {
             }
 
             @Override
-            public int index(final int position, boolean isBound) {
+            public int index(final int position) {
                 final int length = length();
                 final int index = position < 0 ? position + length : position;
                 if (index < length) {
-                    return index;
-                } else if (isBound && index == length) {
                     return index;
                 }
 

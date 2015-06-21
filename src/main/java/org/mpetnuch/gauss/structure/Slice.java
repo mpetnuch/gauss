@@ -61,10 +61,10 @@ public abstract class Slice {
         }
 
         public int stop(Dimension dimension) {
-            if (stop != 0) {
-                return dimension.index(stop, true);
-            } else {
+            if (stop == 0) { // need to separate the zero case, as -1 has special meaning
                 return 0;
+            } else {
+                return dimension.index(stop - 1) + 1;
             }
         }
 

@@ -170,6 +170,7 @@ public class ArrayStructure1D implements ArrayStructure, Structure1D {
         return this;
     }
 
+    @Override
     public ArrayStructure1D swapAxis(int axis1, int axis2) {
         final int axis1DimensionIndex = dimension(axis1).dimensionIndex();
         final int axis2DimensionIndex = dimension(axis2).dimensionIndex();

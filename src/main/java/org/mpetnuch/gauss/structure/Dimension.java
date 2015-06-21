@@ -27,9 +27,5 @@ public interface Dimension {
 
     int length();
 
-    int index(int i, boolean isBound);
-
-    default int index(int i) {
-        return index(i, false);
-    }
+    int index(int i);
 }
