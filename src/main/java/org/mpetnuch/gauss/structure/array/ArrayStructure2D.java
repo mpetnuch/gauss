@@ -20,7 +20,7 @@
 package org.mpetnuch.gauss.structure.array;
 
 import org.mpetnuch.gauss.exception.DimensionMismatchException;
-import org.mpetnuch.gauss.exception.InvalidRangeException;
+import org.mpetnuch.gauss.exception.InvalidDimensionRangeException;
 import org.mpetnuch.gauss.misc.MathUtils;
 import org.mpetnuch.gauss.structure.Dimension;
 import org.mpetnuch.gauss.structure.Slice;
@@ -149,7 +149,7 @@ public final class ArrayStructure2D implements ArrayStructure, Structure2D {
     public int index(int relativeOrdinal) {
         final int ordinal = relativeOrdinal < 0 ? relativeOrdinal + size : relativeOrdinal;
         if (ordinal >= size) {
-            throw new InvalidRangeException(relativeOrdinal, 0, size);
+            throw new InvalidDimensionRangeException(relativeOrdinal, 0, size);
         }
 
         return offset + Math.floorDiv(ordinal, columnCount) * rowStride +
@@ -157,8 +157,9 @@ public final class ArrayStructure2D implements ArrayStructure, Structure2D {
     }
 
     public int index(int rowIndex, int columnIndex) {
-        return dimension(ROW_DIMENSION).index(rowIndex) * rowStride +
-                dimension(COLUMN_DIMENSION).index(columnIndex) * columnStride + offset;
+        final Dimension rowDimension = dimension(ROW_DIMENSION);
+        final Dimension columnDimension = dimension(ROW_DIMENSION);
+        return rowDimension.index(rowIndex) * rowStride + columnDimension.index(columnIndex) * columnStride + offset;
     }
 
     @Override
@@ -175,7 +176,7 @@ public final class ArrayStructure2D implements ArrayStructure, Structure2D {
                 return columnStride();
         }
 
-        throw new InvalidRangeException(dimension, 0, 2);
+        throw new InvalidDimensionRangeException(dimension, 0, 2);
     }
 
     @Override
@@ -197,7 +198,7 @@ public final class ArrayStructure2D implements ArrayStructure, Structure2D {
             case COLUMN_DIMENSION:
                 return (columnCount - 1) * columnStride;
             default:
-                throw new InvalidRangeException(dimension, 0, 1);
+                throw new InvalidDimensionRangeException(dimension, 0, 1);
         }
     }
 

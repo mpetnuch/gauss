@@ -24,20 +24,19 @@ import java.text.MessageFormat;
 /**
  * @author Michael Petnuch
  */
-public class InvalidRangeException extends IllegalArgumentException {
+public class InvalidRangeException extends IndexOutOfBoundsException {
     private static final long serialVersionUID = -8798552081345525331L;
 
-    private final Number argument;
-    private final Number lowerBound, upperBound;
+    protected final int argument;
+    protected final int length;
 
-    public InvalidRangeException(Number argument, Number lowerBound, Number upperBound) {
+    public InvalidRangeException(int argument, int length) {
         this.argument = argument;
-        this.upperBound = upperBound;
-        this.lowerBound = lowerBound;
+        this.length = length;
     }
 
     @Override
     public String getMessage() {
-        return MessageFormat.format("{0} out of [{1}, {2}] range", argument, lowerBound, upperBound);
+        return MessageFormat.format("index {0} is out of range for length {1}", argument, length);
     }
 }

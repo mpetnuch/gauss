@@ -20,7 +20,7 @@
 package org.mpetnuch.gauss.structure.array;
 
 import org.mpetnuch.gauss.exception.DimensionMismatchException;
-import org.mpetnuch.gauss.exception.InvalidRangeException;
+import org.mpetnuch.gauss.exception.InvalidDimensionRangeException;
 import org.mpetnuch.gauss.misc.MathUtils;
 import org.mpetnuch.gauss.structure.Dimension;
 import org.mpetnuch.gauss.structure.Slice;
@@ -65,7 +65,7 @@ public class ArrayStructure1D implements ArrayStructure, Structure1D {
     public int[] indices(int relativeOrdinal) {
         final int ordinal = relativeOrdinal < 0 ? relativeOrdinal + length : relativeOrdinal;
         if (ordinal >= length) {
-            throw new InvalidRangeException(relativeOrdinal, 0, length - 1);
+            throw new InvalidDimensionRangeException(relativeOrdinal, 0, length - 1);
         }
 
         return new int[]{ordinal};
@@ -81,8 +81,13 @@ public class ArrayStructure1D implements ArrayStructure, Structure1D {
     }
 
     @Override
-    public int index(int relativeIndex) {
-        return offset + dimension(0).index(relativeIndex) * stride;
+    public int index(int position) {
+        final int index = position < 0 ? position + length : position;
+        if (index < length) {
+            return offset + index * stride;
+        }
+
+        throw new InvalidDimensionRangeException(position, 0, length);
     }
 
     @Override
@@ -103,7 +108,7 @@ public class ArrayStructure1D implements ArrayStructure, Structure1D {
     @Override
     public int backstride(int dimension) {
         if (dimension != 0) {
-            throw new InvalidRangeException(dimension, 0, 0);
+            throw new InvalidDimensionRangeException(dimension, 0, 0);
         }
 
         return (length - 1) * stride;

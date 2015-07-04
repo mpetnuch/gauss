@@ -88,7 +88,7 @@ public class ArrayStore2D implements ArrayStore, Store2D {
 
     @Override
     public double get(int... indices) {
-        if (structure().dimension() != indices.length) {
+        if (indices.length != 2) {
             throw new IllegalArgumentException();
         }
 

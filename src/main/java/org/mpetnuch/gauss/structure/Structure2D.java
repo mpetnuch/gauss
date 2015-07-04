@@ -19,7 +19,7 @@
 
 package org.mpetnuch.gauss.structure;
 
-import org.mpetnuch.gauss.exception.InvalidRangeException;
+import org.mpetnuch.gauss.exception.InvalidDimensionRangeException;
 
 /**
  * @author Michael Petnuch
@@ -59,6 +59,6 @@ public interface Structure2D extends Structure {
                 return columnCount();
         }
 
-        throw new InvalidRangeException(dimension, 0, 2);
+        throw new InvalidDimensionRangeException(dimension, 0, 2);
     }
 }

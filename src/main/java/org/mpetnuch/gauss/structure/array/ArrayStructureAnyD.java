@@ -20,7 +20,7 @@
 package org.mpetnuch.gauss.structure.array;
 
 import org.mpetnuch.gauss.exception.DimensionMismatchException;
-import org.mpetnuch.gauss.exception.InvalidRangeException;
+import org.mpetnuch.gauss.exception.InvalidDimensionRangeException;
 import org.mpetnuch.gauss.misc.MathUtils;
 import org.mpetnuch.gauss.structure.Slice;
 
@@ -119,7 +119,7 @@ public class ArrayStructureAnyD implements ArrayStructure {
     public int[] indices(int relativeOrdinal) {
         final int ordinal = relativeOrdinal < 0 ? relativeOrdinal + size : relativeOrdinal;
         if (ordinal >= size) {
-            throw new InvalidRangeException(relativeOrdinal, 0, size);
+            throw new InvalidDimensionRangeException(relativeOrdinal, 0, size);
         }
 
         final int[] indices = new int[dimension];
@@ -150,7 +150,7 @@ public class ArrayStructureAnyD implements ArrayStructure {
     public int index(int relativeOrdinal) {
         final int ordinal = relativeOrdinal < 0 ? relativeOrdinal + size : relativeOrdinal;
         if (ordinal >= size) {
-            throw new InvalidRangeException(relativeOrdinal, 0, size);
+            throw new InvalidDimensionRangeException(relativeOrdinal, 0, size);
         }
 
         final int[] l = new int[dimension];

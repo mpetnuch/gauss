@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2015, Michael Petnuch. All Rights Reserved.
  *
- * This file `InvalidDimensionIndexException.java` is part of Gauss.
+ * This file `InvalidDimensionRangeException.java` is part of Gauss.
  *
  * Gauss is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,22 +24,19 @@ import java.text.MessageFormat;
 /**
  * @author Michael Petnuch
  */
-public class InvalidDimensionIndexException extends IllegalArgumentException {
+public class InvalidDimensionRangeException extends InvalidRangeException {
     private static final long serialVersionUID = 412946644176401970L;
 
-    private final int index;
     private final int dimension;
-    private final int length;
 
-    public InvalidDimensionIndexException(int index, int dimension, int length) {
-        this.index = index;
+    public InvalidDimensionRangeException(int argument, int dimension, int length) {
+        super(argument, length);
         this.dimension = dimension;
-        this.length = length;
     }
 
     @Override
     public String getMessage() {
-        return MessageFormat.format("index {0} is out of bounds for dimension {1} with length {2}",
-                index, dimension, length);
+        return MessageFormat.format("index {0} is out of range for dimension {1} with length {2}",
+                argument, dimension, length);
     }
 }

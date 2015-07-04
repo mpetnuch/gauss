@@ -19,7 +19,7 @@
 
 package org.mpetnuch.gauss.structure;
 
-import org.mpetnuch.gauss.exception.InvalidRangeException;
+import org.mpetnuch.gauss.exception.InvalidDimensionRangeException;
 
 /**
  * @author Michael Petnuch
@@ -43,7 +43,7 @@ public interface Structure1D extends Structure {
             return length();
         }
 
-        throw new InvalidRangeException(dimension, 0, 0);
+        throw new InvalidDimensionRangeException(dimension, 0, 0);
     }
 
     Structure1D slice(Slice slice);
